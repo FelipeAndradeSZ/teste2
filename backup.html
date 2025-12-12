@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para Bea 🌻</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&family=Dancing+Script:wght@400;700&family=Pacifico&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #ff6b9d;
+            --secondary: #c44569;
+            --accent: #feca57;
+            --success: #26de81;
+            --info: #4b7bec;
+            --dark: #2d3436;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- CÓDIGO DA NOVA ANIMAÇÃO DE ENTRADA HARMONIZADA --- */
+        #intro-sequence {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000; /* Fundo preto garantido */
+            z-index: 999999;
+            display: flex;
+            flex-direction: column; /* Organiza os elementos em coluna */
+            align-items: center;
+            justify-content: flex-start; /* Começa do topo */
+            overflow: hidden;
+            transition: opacity 1.5s ease-out;
+            padding-top: 5%; /* Espaço do topo */
+        }
+
+        /* Fase 1: Texto Digitado */
+        #typewriter-container {
+            position: absolute;
+            top: 40%; /* Centralizado verticalmente para a fase 1 */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .typewriter-text {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            color: #d8b4e2;
+            text-shadow: 0 0 10px #bd66d6, 0 0 20px #bd66d6;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            min-height: 100px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.5rem;
+            background-color: #d8b4e2;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        #start-btn {
+            margin-top: 40px;
+            padding: 15px 40px;
+            background: transparent;
+            border: 2px solid #d8b4e2;
+            color: #d8b4e2;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.5s;
+            box-shadow: 0 0 15px rgba(216, 180, 226, 0.3);
+            pointer-events: none;
+        }
+
+        #start-btn:hover {
+            background: #d8b4e2;
+            color: #000;
+            box-shadow: 0 0 30px rgba(216, 180, 226, 0.8);
+        }
+
+        /* Fase 2: Canvas e Elementos */
+        #heart-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        .final-msg-container {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        .final-msg {
+            position: relative;
+            font-family: 'Dancing Script', cursive;
+            font-size: 3rem;
+            color: #feca57;
+            text-shadow: 0 0 15px #ff6b9d;
+            opacity: 0;
+            transition: opacity 2s ease;
+            z-index: 15; /* Fica na frente do sol */
+        }
+
+        /* O Sol Transparente */
+        .sun-container-wrapper {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5; /* Fica atrás da frase */
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .the-sun {
+            width: 100px;
+            height: 100px;
+            background: #feca57;
+            border-radius: 50%;
+            box-shadow: 0 0 40px #feca57, 0 0 80px rgba(254, 202, 87, 0.6);
+            opacity: 0.1; /* Opacidade 0.1 como solicitado */
+        }
+
+        /* --- FIM DO CSS DA ENTRADA --- */
+
+
+        /* --- CSS ORIGINAL DO SITE --- */
+
+        /* --- PLAYER ESTILO SPOTIFY --- */
+        .player-card {
+            grid-column: span 6;
+            background: linear-gradient(145deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+            padding: 20px;
+        }
+
+        .player-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .album-cover {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 4px solid #1db954;
+            box-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
+            object-fit: cover;
+            animation: rotateAlbum 10s linear infinite;
+            animation-play-state: paused;
+        }
+
+        @keyframes rotateAlbum {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .song-info { text-align: center; }
+        .song-title { color: white; font-size: 1.2rem; font-weight: 700; margin-bottom: 5px; }
+        .artist-name { color: #b3b3b3; font-size: 0.9rem; }
+
+        .progress-area {
+            width: 100%; height: 6px; background: #535353;
+            border-radius: 50px; cursor: pointer; margin: 5px 0; position: relative;
+        }
+        .progress-bar {
+            height: 100%; width: 0%; background: #1db954;
+            border-radius: 50px; position: relative;
+        }
+        .progress-bar::after {
+            content: ''; position: absolute; right: -5px; top: -4px;
+            width: 14px; height: 14px; background: white; border-radius: 50%;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .progress-area:hover .progress-bar::after { opacity: 1; }
+
+        .controls { display: flex; align-items: center; gap: 20px; margin-bottom: 5px; }
+        .control-btn { background: none; border: none; color: #b3b3b3; font-size: 1.1rem; cursor: pointer; transition: color 0.3s; }
+        .control-btn:hover { color: white; }
+        .play-pause-btn {
+            width: 45px; height: 45px; background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: black; font-size: 1.1rem; cursor: pointer; transition: transform 0.2s;
+        }
+        .play-pause-btn:hover { transform: scale(1.1); }
+        .time-stamps { width: 100%; display: flex; justify-content: space-between; font-size: 0.75rem; color: #b3b3b3; }
+
+        .volume-container {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; width: 80%; margin-top: 5px;
+        }
+        .volume-slider {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 4px; background: #535353;
+            border-radius: 5px; outline: none; opacity: 0.7; transition: opacity .2s;
+        }
+        .volume-slider:hover { opacity: 1; }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 12px; height: 12px; background: white;
+            cursor: pointer; border-radius: 50%;
+        }
+        .volume-icon { color: #b3b3b3; font-size: 0.9rem; cursor: pointer; }
+        .volume-icon:hover { color: white; }
+
+        @media (max-width: 768px) { .player-card { grid-column: span 1; } }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .star { position: absolute; width: 2px; height: 2px; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } }
+
+        .floating-hearts { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: hidden; }
+        .heart-float { position: absolute; font-size: 20px; animation: floatUp 10s linear infinite; opacity: 0; }
+        @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.7; } 90% { opacity: 0.7; } 100% { transform: translateY(-100px) rotate(360deg); opacity: 0; } }
+
+        /* Container principal */
+        .container {
+            max-width: 1600px; margin: 0 auto; padding: 20px; position: relative; z-index: 3;
+            opacity: 0; /* Começa invisível, revelado pelo JS após animação */
+            transition: opacity 2s ease-in;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 30px;
+            padding: 30px; margin-bottom: 30px; text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2); position: relative; overflow: hidden;
+        }
+        .header::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine { 0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); } 100% { transform: translateX(100%) translateY(100%) rotate(45deg); } }
+
+        .header h1 {
+            font-size: 3.5rem; background: linear-gradient(135deg, #fff, #ffd700);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            text-shadow: 2px 2px 20px rgba(255, 255, 255, 0.3); margin-bottom: 15px; font-weight: 900;
+        }
+
+        .status-indicator {
+            display: inline-flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.25);
+            padding: 12px 25px; border-radius: 25px; color: white; font-weight: 700;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .status-dot { width: 15px; height: 15px; border-radius: 50%; background: #ccc; animation: pulse 2s infinite; box-shadow: 0 0 10px currentColor; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } }
+
+        .main-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 25px; margin-bottom: 30px; }
+
+        .card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 25px; padding: 30px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15); transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent); transition: 0.5s;
+        }
+        .card:hover::before { left: 100%; }
+        .card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.5); }
+
+        .card-title { font-size: 1.5rem; color: white; margin-bottom: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); }
+        .card-title i { font-size: 1.8rem; }
+
+        .mood-card { grid-column: span 4; }
+        .counter-card { grid-column: span 4; }
+        .quote-card { grid-column: span 4; }
+        .love-letter-card { grid-column: span 6; }
+        .message-card { grid-column: span 6; }
+        .gallery-card { grid-column: span 8; }
+        .history-card { grid-column: span 4; }
+        .sleep-card { grid-column: span 12; }
+        .garden-card { grid-column: span 4; }
+        .calendar-card { grid-column: span 4; }
+        .game-card { grid-column: span 8; }
+
+        .mood-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .mood-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 25px 15px;
+            color: white; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; overflow: hidden;
+        }
+        .mood-btn:hover { transform: scale(1.1) rotate(3deg); box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.6); }
+        .mood-btn i { font-size: 2.5rem; }
+
+        .counter-display { text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.2)); border-radius: 20px; border: 2px solid rgba(255, 255, 255, 0.4); }
+        .counter-number {
+            font-size: 4rem; font-weight: 900; background: linear-gradient(135deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin: 15px 0; animation: countPulse 2s ease-in-out infinite;
+        }
+        @keyframes countPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .counter-label { font-size: 1.2rem; color: white; font-weight: 600; }
+
+        .quote-box {
+            text-align: center; padding: 25px; background: linear-gradient(135deg, rgba(147, 51, 234, 0.3), rgba(219, 39, 119, 0.2));
+            border-radius: 20px; cursor: pointer; transition: all 0.3s ease; border: 2px solid rgba(255, 255, 255, 0.4);
+            min-height: 180px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .quote-box:hover { transform: scale(1.05); }
+        .quote-text { font-family: 'Pacifico', cursive; font-size: 1.3rem; color: white; min-height: 60px; }
+
+        .love-letter {
+            background: linear-gradient(135deg, rgba(255, 105, 180, 0.4), rgba(255, 20, 147, 0.3));
+            border: 2px solid rgba(255, 255, 255, 0.4); padding: 30px; border-radius: 20px;
+            cursor: pointer; transition: all 0.4s ease; text-align: center; min-height: 200px;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .love-letter:hover { transform: scale(1.05); box-shadow: 0 20px 50px rgba(255, 105, 180, 0.5); }
+        .love-preview { font-family: 'Dancing Script', cursive; font-size: 1.4rem; color: white; }
+
+        .message-input {
+            width: 100%; background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 15px; padding: 18px; color: white; font-family: 'Poppins', sans-serif;
+            font-size: 1rem; resize: vertical; min-height: 120px; margin-bottom: 15px;
+        }
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 15px;
+            padding: 18px 30px; color: white; font-weight: 700; cursor: pointer; width: 100%;
+            font-size: 1.1rem; transition: all 0.3s ease;
+        }
+        .send-btn:hover { transform: translateY(-3px); }
+
+        .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 100%; }
+        .gallery-item {
+            aspect-ratio: 1 / 1; background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            border: 3px solid rgba(255, 255, 255, 0.5); border-radius: 20px; position: relative; overflow: hidden;
+            cursor: pointer; transition: all 0.4s;
+        }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        .gallery-item:hover { transform: scale(1.05) rotate(3deg); border-color: #fff; z-index: 2; }
+
+        .garden-btn {
+            width: 100%; min-height: 200px; background: linear-gradient(135deg, #11998e, #38ef7d);
+            border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 20px; color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 15px; text-decoration: none; transition: all 0.4s;
+        }
+        .garden-btn:hover { transform: translateY(-5px) scale(1.02); }
+
+        .calendar-list { list-style: none; padding: 0; max-height: 250px; overflow-y: auto; }
+        .calendar-item {
+            display: flex; align-items: center; gap: 15px; background: rgba(255, 255, 255, 0.1);
+            padding: 12px; margin-bottom: 10px; border-radius: 12px; color: white;
+            border-left: 3px solid #feca57; transition: transform 0.2s;
+        }
+        .calendar-item:hover { background: rgba(255, 255, 255, 0.2); transform: translateX(5px); }
+        .date-badge {
+            background: white; color: #c44569; padding: 5px 10px; border-radius: 10px;
+            font-weight: 700; font-size: 0.9rem; min-width: 60px; text-align: center;
+        }
+
+        .game-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
+        .game-cell {
+            aspect-ratio: 1/1; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 15px; font-size: 3rem; display: flex; align-items: center; justify-content: center;
+            color: white; cursor: pointer; font-weight: 900; transition: all 0.3s;
+        }
+        .game-cell:hover { background: rgba(255, 255, 255, 0.4); }
+        .game-cell.x { color: #feca57; text-shadow: 0 0 10px rgba(254, 202, 87, 0.5); }
+        .game-cell.o { color: #26de81; text-shadow: 0 0 10px rgba(38, 222, 129, 0.5); }
+        
+        .game-controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .team-btn {
+            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255,255,255,0.3); padding: 10px 20px;
+            color: white; border-radius: 20px; cursor: pointer; transition: all 0.3s;
+        }
+        .team-btn.selected { background: white; color: #2d3436; font-weight: 800; box-shadow: 0 5px 15px rgba(255,255,255,0.3); }
+        .game-btn { background: linear-gradient(135deg, #667eea, #764ba2); border: none; padding: 10px 25px; color: white; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .turn-indicator { text-align: center; margin: 15px 0; font-size: 1.2rem; color: white; font-weight: 600; }
+
+        .sleep-button {
+            background: linear-gradient(135deg, rgba(46, 49, 146, 0.4), rgba(27, 20, 100, 0.3));
+            border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 25px 40px;
+            color: white; font-size: 1.3rem; font-weight: 700; cursor: pointer; width: 100%;
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+        }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85);
+            display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px);
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(30px); border: 3px solid rgba(255, 255, 255, 0.4); border-radius: 35px;
+            padding: 50px; max-width: 700px; width: 90%; color: white; text-align: center;
+            max-height: 85vh; overflow-y: auto; position: relative;
+        }
+        .modal-close {
+            background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 20px;
+            padding: 15px 40px; color: white; font-weight: 700; cursor: pointer; margin-top: 25px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid { grid-template-columns: repeat(8, 1fr); }
+            .mood-card, .counter-card, .quote-card, .calendar-card { grid-column: span 4; }
+            .love-letter-card, .message-card { grid-column: span 4; }
+            .gallery-card, .game-card { grid-column: span 8; }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .main-grid { grid-template-columns: 1fr; gap: 20px; }
+            .mood-card, .counter-card, .quote-card, .love-letter-card, .message-card,
+            .gallery-card, .history-card, .sleep-card, .garden-card, .calendar-card, .game-card { grid-column: span 1; }
+            .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+            .mood-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-sequence">
+        <div id="typewriter-container">
+            <div class="typewriter-text" id="typewriterText"></div>
+            <button id="start-btn" onclick="iniciarAnimacaoCoracao()">
+                <i class="fas fa-heart"></i> Continuar
+            </button>
+        </div>
+
+        <canvas id="heart-canvas"></canvas>
+
+        <div class="final-msg-container" id="finalMsgContainer">
+            <div class="final-msg" id="finalMsg">
+                Para sempre você, meu solzinho ☀️
+            </div>
+            <div class="sun-container-wrapper" id="sunWrapper">
+                <div class="the-sun"></div>
+            </div>
+        </div>
+    </div>
+    <div class="stars" id="stars"></div>
+    <div class="floating-hearts" id="floatingHearts"></div>
+
+    <div class="container" id="mainContainer">
+        <div class="header">
+            <h1>💖 Para meu Solzinho ☀️</h1>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Conectando...</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="card mood-card">
+                <div class="card-title">
+                    <i class="fas fa-heart"></i>
+                    Como você está?
+                </div>
+                <div class="mood-grid">
+                    <button class="mood-btn" onclick="enviarHumor('verde', '😊')">
+                        <i class="fas fa-smile-beam"></i>
+                        <span>Feliz</span>
+                    </button>
+                    <button class="mood-btn" onclick="enviarHumor('amarelo', '💼')">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Ocupada</span>
+                    </button>
+                    <button class="mood-btn" onclick="enviarHumor('vermelho', '😔')">
+                        <i class="fas fa-cloud-rain"></i>
+                        <span>Triste</span>
+                    </button>
+                    <button class="mood-btn" onclick="enviarHumor('coracao', '🫂')">
+                        <i class="fa-solid fa-heart-circle-bolt"></i>
+                        <span>Abraço</span>
+                    </button>
+                </div>
+            </div>
+
+
+            <div class="card player-card">
+                <div class="card-title" style="align-self: flex-start; width:100%; display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span><i class="fas fa-music"></i> Música do Dia 🎵</span>
+                </div>
+                
+                <div class="player-wrapper">
+                    <img src="img.png" alt="Album Art" class="album-cover" id="albumCover">
+                    
+                    <div class="song-info">
+                        <div class="song-title" id="songTitle">Daylight</div>
+                        <div class="artist-name" id="artistName">Taylor Swift</div>
+                    </div>
+
+                    <div class="progress-area" id="progressArea">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    
+                    <div class="time-stamps">
+                        <span id="currentTime">0:00</span>
+                        <span id="duration">0:00</span>
+                    </div>
+
+                    <div class="controls">
+                        <button class="control-btn"><i class="fas fa-backward"></i></button>
+                        <button class="play-pause-btn" onclick="togglePlay()">
+                            <i class="fas fa-play" id="playIcon"></i>
+                        </button>
+                        <button class="control-btn"><i class="fas fa-forward"></i></button>
+                    </div>
+
+                    <div class="volume-container">
+                        <i class="fas fa-volume-down volume-icon" onclick="mudarVolume(-10)"></i>
+                        <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider" oninput="setVolume(this.value)">
+                        <i class="fas fa-volume-up volume-icon" onclick="mudarVolume(10)"></i>
+                    </div>
+                </div>
+                
+                <audio id="audioPlayer" src="daylight.mp3"></audio>
+            </div>
+
+            <div class="card counter-card">
+                <div class="card-title">
+                    <i class="fas fa-calendar-heart"></i>
+                    Descobri a felicidade há
+                </div>
+                <div class="counter-display">
+                    <i class="fas fa-infinity" style="font-size: 2rem; color: white;"></i>
+                    <div class="counter-number" id="daysCounter">0</div>
+                    <div class="counter-label"> ☀️ Dias ☀️</div>
+                </div>
+            </div>
+
+            <div class="card quote-card">
+                <div class="card-title">
+                    <i class="fas fa-sparkles"></i>
+                    Mensagem Especial
+                </div>
+                <div class="quote-box" onclick="gerarFrase()">
+                    <div class="quote-icon">✨</div>
+                    <div class="quote-text" id="quoteText">Clique para uma mensagem</div>
+                </div>
+            </div>
+
+            <div class="card love-letter-card">
+                <div class="card-title">
+                    <i class="fas fa-envelope-heart"></i>
+                    Carta para Você
+                </div>
+                <div class="love-letter" onclick="abrirCarta()">
+                    <i class="fa-solid fa-envelope"></i>
+                    <div class="love-preview">
+                        Clique aqui para ler uma mensagem especial do meu coração 💕<br>
+                        Cartinha feita no dia 10/12/25
+                    </div>
+                </div>
+            </div>
+
+            <div class="card message-card">
+                <div class="card-title">
+                    <i class="fas fa-comment-dots"></i>
+                    Enviar Recadinho
+                </div>
+                <textarea class="message-input" id="mensagemCustom" placeholder="Escreva uma mensagem carinhosa para enviar..."></textarea>
+                <button class="send-btn" onclick="enviarMensagem()">
+                    <i class="fas fa-paper-plane"></i> Enviar com Amor
+                </button>
+            </div>
+       
+            <div class="card gallery-card">
+                <div class="card-title">
+                    <i class="fas fa-images"></i>
+                    Nossas Memórias 📸
+                </div>
+                
+                <div class="gallery-grid">
+                    <div class="gallery-item" onclick="abrirMemoria('foto4.jpg', '07/12/2025', 'O dia que fomos comer pizza juntinhos! ✨')">
+                        <img src="foto4.jpg" alt="Foto 4">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card garden-card">
+                <div class="card-title">
+                    <i class="fas fa-leaf"></i>
+                    Nosso Jardim 🌷
+                </div>
+                
+                <a href="jardim.html" class="garden-btn">
+                    <i class="fas fa-tree" style="font-size: 3.5rem;"></i>
+                    <span style="font-size: 1.4rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        Ir para o Jardim
+                    </span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">Regar nossas flores 💦</span>
+                </a>
+            </div>
+
+            <div class="card calendar-card">
+                <div class="card-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Datas Importantes
+                </div>
+                <ul class="calendar-list">
+                    <li class="calendar-item">
+                        <span class="date-badge">30/11/25</span>
+                        <span>Nosso Início 💖</span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">15/12/25</span>
+                        <span>Viagem para Holambra 🎄</span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">07/03/26</span>
+                        <span>Aniversário felipe </span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">20/05/26</span>
+                        <span>Aniversário da minha princesa 🥳</span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">12/06/26</span>
+                        <span>Dia dos Namorados 🎁</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card game-card">
+                <div class="card-title">
+                    <i class="fas fa-gamepad"></i>
+                    Jogo da Velha (Online)
+                </div>
+                
+                <div class="turn-indicator">
+                    Vez de: <span id="turnDisplay" style="color: #feca57;">X</span>
+                </div>
+
+                <div class="game-board" id="gameBoard">
+                    <div class="game-cell" onclick="jogar(0)"></div>
+                    <div class="game-cell" onclick="jogar(1)"></div>
+                    <div class="game-cell" onclick="jogar(2)"></div>
+                    <div class="game-cell" onclick="jogar(3)"></div>
+                    <div class="game-cell" onclick="jogar(4)"></div>
+                    <div class="game-cell" onclick="jogar(5)"></div>
+                    <div class="game-cell" onclick="jogar(6)"></div>
+                    <div class="game-cell" onclick="jogar(7)"></div>
+                    <div class="game-cell" onclick="jogar(8)"></div>
+                </div>
+                
+                <div class="game-controls">
+                    <button id="btnX" class="team-btn selected" onclick="escolherLado('X')">Sou X</button>
+                    <button id="btnO" class="team-btn" onclick="escolherLado('O')">Sou Bola</button>
+                    <button class="game-btn" onclick="resetGame()">Reiniciar</button>
+                </div>
+                <div style="text-align:center; color:white; margin-top:10px; font-size:0.9rem; opacity:0.8;">
+                    Escolha qual vc quer ser meu bem! ⚠️
+                </div>
+            </div>
+
+            <div class="card sleep-card">
+                <button class="sleep-button" onclick="enviarHumor('desligar', '🌙')">
+                    <i class="fas fa-moon"></i>
+                    <span>Desligar Luz / Boa Noite 🌙</span>
+                    <i class="fas fa-bed"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modalContent">
+            <div id="modalBody"></div>
+            <button class="modal-close" onclick="fecharModal()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SCRIPT DA ANIMAÇÃO DE ENTRADA HARMONIZADA ---
+
+        // Texto que será digitado
+        const textoEntrada = "Oiii meu amor... ✨\nEspero que tenha gostado da primeira surpresa que chegou ai para você.\nAgora a segunda surpresa é esta nova entrada para o seu sitezinho :)\n\nÉ coisa bem boba, mas espero que goste dela.";
+
+        const typeWriterElement = document.getElementById('typewriterText');
+        const startBtn = document.getElementById('start-btn');
+        let charIndex = 0;
+
+        // Função de Digitação
+        function typeWriter() {
+            if (charIndex < textoEntrada.length) {
+                const char = textoEntrada.charAt(charIndex);
+                const span = document.createElement('span');
+                span.textContent = char;
+                typeWriterElement.appendChild(span);
+                
+                // Adiciona o cursor piscante no final
+                let cursor = document.querySelector('.cursor');
+                if(!cursor) {
+                    cursor = document.createElement('span');
+                    cursor.className = 'cursor';
+                    typeWriterElement.appendChild(cursor);
+                } else {
+                    typeWriterElement.appendChild(cursor); // Move para o final
+                }
+
+                charIndex++;
+                setTimeout(typeWriter, 50); // Velocidade da digitação
+            } else {
+                // Fim da digitação: Mostra o botão
+                setTimeout(() => {
+                    startBtn.style.opacity = '1';
+                    startBtn.style.pointerEvents = 'all';
+                }, 500);
+            }
+        }
+
+        // Inicia a digitação quando a página carrega
+        window.addEventListener('load', () => {
+             // Limpa o texto inicial e começa
+            typeWriterElement.innerHTML = ''; 
+            setTimeout(typeWriter, 1000);
+        });
+
+        // Clique no botão -> Começa a animação do coração
+        function iniciarAnimacaoCoracao() {
+            // Some com o texto e botão
+            document.getElementById('typewriter-container').style.transition = 'opacity 1s';
+            document.getElementById('typewriter-container').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('typewriter-container').style.display = 'none';
+                initCanvasParticles(); // Inicia o Canvas
+            }, 1000);
+        }
+
+        // --- SISTEMA DE PARTÍCULAS DO CANVAS ---
+        function initCanvasParticles() {
+            const canvas = document.getElementById('heart-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            const particleCount = 500; // Quantidade de partículas
+
+            // Função matemática do Coração
+            function getHeartPoint(factor) {
+                const t = factor * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                // Escala e posiciona para o centro do layout
+                const scale = Math.min(canvas.width, canvas.height) / 45; 
+                return {
+                    x: (x * scale) + canvas.width / 2,
+                    y: -(y * scale) + canvas.height / 2 - canvas.height * 0.01 // Ajuste vertical para ficar abaixo do girassol
+                };
+            }
+
+            class Particle {
+                constructor() {
+                    // Posição Inicial: Aleatória fora do centro (Disperso)
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    
+                    // Alvo: Um ponto na linha do coração
+                    this.target = getHeartPoint(Math.random());
+                    
+                    // Velocidade: Muito mais lenta para um efeito esplêndido
+                    this.speed = Math.random() * 0.01 + 0.005; // 4x mais lento que antes
+                    
+                    // Cor Neon Rosa/Lilás
+                    const hue = Math.random() > 0.5 ? 320 : 280; // Rosa ou Roxo
+                    this.color = `hsl(${hue}, 100%, 60%)`;
+                    this.size = Math.random() * 2 + 1.5;
+                }
+
+                update() {
+                    // Move em direção ao alvo (efeito reintegrando)
+                    this.x += (this.target.x - this.x) * this.speed;
+                    this.y += (this.target.y - this.y) * this.speed;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15; // Mais brilho
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                }
+            }
+
+            // Criar partículas
+            for(let i=0; i<particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                // Limpa com um rastro suave
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // Rastro mais longo para suavidade
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+
+            // --- SEQUÊNCIA DE APARECIMENTO HARMONIZADA ---
+
+            // 1. O Coração começa a se formar lentamente. Após 5 segundos (duração da formação lenta):
+            setTimeout(() => {
+                
+                // 2. Mostra a Frase no Topo
+                document.getElementById('finalMsg').style.opacity = '1';
+
+                // 3. Um segundo depois, o Sol nasce transparente atrás da frase
+                setTimeout(() => {
+                    document.getElementById('sunWrapper').style.opacity = '1';
+                }, 1000);
+
+                // 4. FINAL: Após tudo estar na tela por um tempo, revela o site
+                setTimeout(() => {
+                    const intro = document.getElementById('intro-sequence');
+                    intro.style.opacity = '0';
+                    intro.style.pointerEvents = 'none';
+                    
+                    // Mostra o container principal
+                    document.getElementById('mainContainer').style.opacity = '1';
+                    
+                    // Remove do DOM para economizar memória
+                    setTimeout(() => intro.remove(), 2000);
+                }, 6000); // 6 segundos após a frase aparecer
+
+            }, 9000); // Espera 5s para o coração se formar bem
+        }
+
+
+        // --- 2. SCRIPT ORIGINAL DO SITE (FUNCIONALIDADES) ---
+
+        // Configuração MQTT
+        const HOST = "0c74a64b55ed4b21b7f352c3abb8b974.s1.eu.hivemq.cloud";
+        const PORT = 8884;
+        const USERNAME = "felps";
+        const PASSWORD = "@Fepa2002";
+        const TOPICO = "projeto/humor";
+        const CLIENT_ID = "bea_premium_" + Math.random().toString(16).substr(2, 8);
+
+        let client = new Paho.MQTT.Client(HOST, PORT, CLIENT_ID);
+
+        const options = {
+            timeout: 3,
+            onSuccess: conectado,
+            onFailure: falhaConexao,
+            useSSL: true,
+            userName: USERNAME,
+            password: PASSWORD,
+            keepAliveInterval: 30
+        };
+
+        client.onMessageArrived = receberMensagem;
+        client.connect(options);
+
+        function conectado() {
+            document.getElementById("statusText").innerText = "Online ✓";
+            document.getElementById("statusDot").style.background = "#2ecc71";
+            client.subscribe(TOPICO); 
+        }
+
+        function falhaConexao() {
+            document.getElementById("statusText").innerText = "Reconectando...";
+            document.getElementById("statusDot").style.background = "#e74c3c";
+            setTimeout(() => client.connect(options), 2000);
+        }
+
+        function enviarHumor(comando, emoji) {
+            enviarMQTT(comando);
+            criarEfeitoParticulas(emoji);
+            
+            if(!comando.startsWith('game:')) {
+                // adicionarHistorico(comando, emoji); // Função removida ou não definida no original
+            }
+
+            if (comando === 'vermelho') {
+                setTimeout(() => mostrarApoio(), 500);
+            } else if (comando === 'desligar') {
+                mostrarModal('<i class="fas fa-moon" style="font-size:4rem;color:#ffd700;"></i><h2>Boa Noite! 🌙</h2><p>Que seus sonhos sejam doces como você ✨</p>');
+            }
+        }
+
+        function enviarMensagem() {
+            const texto = document.getElementById('mensagemCustom').value.trim();
+            if (!texto) {
+                mostrarModal('<i class="fas fa-exclamation-triangle" style="font-size:3rem;color:#feca57;"></i><h2>Opa!</h2><p>Escreva uma mensagem primeiro 😊</p>');
+                return;
+            }
+            
+            enviarMQTT("msg:" + texto);
+            document.getElementById('mensagemCustom').value = "";
+            criarEfeitoParticulas('💌');
+            mostrarModal('<i class="fas fa-check-circle" style="font-size:4rem;color:#2ecc71;"></i><h2>Mensagem Enviada! ✓</h2><p>Sua mensagem foi enviada com muito carinho 💕</p>');
+        }
+
+        function enviarMQTT(mensagem) {
+            if (!client.isConnected()) return;
+            const message = new Paho.MQTT.Message(mensagem);
+            message.destinationName = TOPICO;
+            client.send(message);
+        }
+
+        // --- LÓGICA DO JOGO DA VELHA ---
+        let meuSimbolo = 'X';
+        let turnoAtual = 'X';
+        let cells = ['', '', '', '', '', '', '', '', ''];
+        
+        function escolherLado(simbolo) {
+            meuSimbolo = simbolo;
+            document.getElementById('btnX').classList.remove('selected');
+            document.getElementById('btnO').classList.remove('selected');
+            if(simbolo === 'X') {
+                document.getElementById('btnX').classList.add('selected');
+            } else {
+                document.getElementById('btnO').classList.add('selected');
+            }
+        }
+
+        function jogar(index) {
+            if(cells[index] === '') {
+                if (meuSimbolo === turnoAtual) {
+                    enviarMQTT(`game:${index}:${meuSimbolo}`);
+                } else {
+                    mostrarModal('<i class="fas fa-hand-paper" style="font-size:3rem;color:#feca57;"></i><h2>Espere!</h2><p>Ainda não é sua vez 😊</p>');
+                }
+            }
+        }
+
+        function resetGame() {
+            enviarMQTT('game:reset');
+        }
+
+        function receberMensagem(message) {
+            const msg = message.payloadString;
+
+            if (msg.startsWith('game:')) {
+                if (msg === 'game:reset') {
+                    cells = ['', '', '', '', '', '', '', '', ''];
+                    turnoAtual = 'X';
+                    atualizarTabuleiro();
+                    return;
+                }
+                const parts = msg.split(':');
+                const index = parseInt(parts[1]);
+                const symbol = parts[2];
+                cells[index] = symbol;
+                turnoAtual = (symbol === 'X') ? 'O' : 'X';
+                atualizarTabuleiro();
+                verificarVitoria();
+            } else if (msg.startsWith('msg:')) {
+                // Lógica de msg recebida
+            }
+        }
+
+        function atualizarTabuleiro() {
+            const board = document.getElementById('gameBoard');
+            const divs = board.getElementsByClassName('game-cell');
+            const turnDisplay = document.getElementById('turnDisplay');
+            turnDisplay.innerText = turnoAtual;
+            turnDisplay.style.color = turnoAtual === 'X' ? '#feca57' : '#26de81';
+
+            for(let i=0; i<9; i++) {
+                divs[i].innerText = cells[i];
+                divs[i].className = 'game-cell ' + (cells[i] === 'X' ? 'x' : cells[i] === 'O' ? 'o' : '');
+            }
+        }
+
+        function verificarVitoria() {
+            const combos = [
+                [0,1,2], [3,4,5], [6,7,8], 
+                [0,3,6], [1,4,7], [2,5,8],
+                [0,4,8], [2,4,6]
+            ];
+
+            for (let combo of combos) {
+                const [a, b, c] = combo;
+                if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) {
+                    setTimeout(() => mostrarModal(`<i class="fas fa-trophy" style="font-size:4rem;color:#ffd700;"></i><h2>O jogador ${cells[a]} venceu! 🎉</h2><p>Parabéns!</p>`), 300);
+                    return;
+                }
+            }
+            if (!cells.includes('')) {
+                 setTimeout(() => mostrarModal(`<i class="fas fa-handshake" style="font-size:4rem;color:#fff;"></i><h2>Empate!</h2><p>Deu velha!</p>`), 300);
+            }
+        }
+
+        function abrirMemoria(src, data, texto) {
+            mostrarModal(`
+                <div style="text-align:center;">
+                    <img src="${src}" style="max-width:100%; max-height:50vh; border-radius:15px; border:3px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                    <h2 style="font-family:'Pacifico', cursive; color:#feca57; margin:15px 0;">📅 ${data}</h2>
+                    <p style="font-size:1.3rem; font-style:italic;">"${texto}"</p>
+                </div>
+            `);
+        }
+
+        function criarEfeitoParticulas(emoji) {
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.innerText = emoji;
+                particle.style.position = 'fixed';
+                particle.style.left = Math.random() * window.innerWidth + 'px';
+                particle.style.top = Math.random() * window.innerHeight + 'px';
+                particle.style.fontSize = (Math.random() * 30 + 20) + 'px';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '9999';
+                particle.style.transition = 'all 2s ease-out';
+                particle.style.opacity = '1';
+                document.body.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.style.transform = `translateY(-100px) rotate(${Math.random() * 360}deg)`;
+                    particle.style.opacity = '0';
+                }, 50);
+
+                setTimeout(() => particle.remove(), 2000);
+            }
+        }
+
+        function mostrarApoio() {
+            const mensagens = [
+                '<i class="fas fa-heart" style="font-size:4rem;color:#ff6b9d;"></i><h2>Estou Aqui! 🌻</h2><p>Pode contar comigo sempre que precisar.<br>Te amo muito! 💕</p>',
+                '<i class="fas fa-hands-holding-heart" style="font-size:4rem;color:#ff69b4;"></i><h2>Vai Passar! ✨</h2><p>Dias difíceis são temporários,<br>mas meu amor por você é eterno! 💖</p>',
+                '<i class="fas fa-heart-pulse" style="font-size:4rem;color:#e73c7e;"></i><h2>Você é Forte! 💪</h2><p>E nunca está sozinha.<br>Estou sempre ao seu lado! 🫂</p>'
+            ];
+            const msg = mensagens[Math.floor(Math.random() * mensagens.length)];
+            mostrarModal(msg);
+        }
+
+        const frases = [
+            "Seu sorriso ilumina meu mundo inteiro! ✨",
+            "Você é a perfeição completa meu solzinho",
+            "Admiro a muito a sua dedicação!",
+            "Confesso que te amo mais do que ontem e menos do que amanhã ❤️",
+            "Amo MUITO seu cabelo",
+            "Meu lugar favorito se tornou ao seu lado",
+            "Obrigado por me trazer tanta felicidade",
+            "Você transforma dias comuns em dias incriveis! ✨",
+            "Seu abraço me traz muita paz!",
+            "Com você, tudo fica melhor!"
+        ];
+
+        function gerarFrase() {
+            const frase = frases[Math.floor(Math.random() * frases.length)];
+            const el = document.getElementById('quoteText');
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.innerText = frase;
+                el.style.opacity = '1';
+            }, 300);
+        }
+
+        function abrirCarta() {
+            mostrarModal(`
+                <i class="fas fa-envelope-open-heart" style="font-size:4rem;color:#ff69b4;"></i>
+                <h2 style="font-family:'Dancing Script',cursive;font-size:2.5rem;margin:25px 0;">Para Minha Bea 💖</h2>
+                <p style="text-align:left;font-size:1.15rem;line-height:2;">
+                    Meu solzinho,
+                    <br><br>
+                    Oii, a cartinha junto a flor não podia escrever muito então vou escrever aqui o restante que eu queria te dizer ksksks.
+                    <br><br>
+                    Bom primeiramente queria dizer que confio extremamente em você, sei da sua capacidade e sei que você irá dar o seu melhor amanha e sexta, independente do resultado final, se sinta orgulhosa de si mesma sempre, pois você é foda pra caramba e me orgulho muito em ver a pessoa que você é e se torna a cada dia, bons estudos hoje, que as rosas te motivem ainda mais nos estudos de hoje e na provinha amanhã e sexta, obrigado por tudo, será você para todo sempre. Eu te amo.
+                    <strong style="font-family:'Dancing Script',cursive;font-size:1.5rem;">
+                    <br><br>    Com todo meu amor,<br>Seu Oceaninho 🌊
+                    </strong>
+                </p>
+            `);
+        }
+
+        function mostrarModal(conteudo) {
+            document.getElementById('modalBody').innerHTML = conteudo;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') fecharModal();
+        });
+
+        function calcularDias() {
+            const dataInicio = new Date('2025-11-30');
+            const hoje = new Date();
+            const diferenca = Math.floor((hoje - dataInicio) / (1000 * 60 * 60 * 24));
+            document.getElementById('daysCounter').innerText = diferenca;
+        }
+        calcularDias();
+
+        // --- LÓGICA DO PLAYER DE MÚSICA ---
+        const audio = document.getElementById('audioPlayer');
+        const playIcon = document.getElementById('playIcon');
+        const albumCover = document.getElementById('albumCover');
+        const progressBar = document.getElementById('progressBar');
+        const progressArea = document.getElementById('progressArea');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
+        const volumeSlider = document.getElementById('volumeSlider');
+
+        audio.volume = 0.5;
+
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play();
+                playIcon.classList.remove('fa-play');
+                playIcon.classList.add('fa-pause');
+                albumCover.style.animationPlayState = 'running';
+            } else {
+                audio.pause();
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+                albumCover.style.animationPlayState = 'paused';
+            }
+        }
+
+        function setVolume(valor) {
+            audio.volume = valor / 100;
+        }
+
+        function mudarVolume(delta) {
+            let novoValor = parseInt(volumeSlider.value) + delta;
+            if (novoValor > 100) novoValor = 100;
+            if (novoValor < 0) novoValor = 0;
+            volumeSlider.value = novoValor;
+            setVolume(novoValor);
+        }
+
+        audio.addEventListener('timeupdate', (e) => {
+            const currentTime = e.target.currentTime;
+            const duration = e.target.duration;
+            if(duration) {
+                let progressWidth = (currentTime / duration) * 100;
+                progressBar.style.width = `${progressWidth}%`;
+                let currentMin = Math.floor(currentTime / 60);
+                let currentSec = Math.floor(currentTime % 60);
+                if(currentSec < 10) currentSec = `0${currentSec}`;
+                currentTimeEl.innerText = `${currentMin}:${currentSec}`;
+            }
+        });
+
+        audio.addEventListener('loadeddata', () => {
+            let audioDuration = audio.duration;
+            let totalMin = Math.floor(audioDuration / 60);
+            let totalSec = Math.floor(audioDuration % 60);
+            if(totalSec < 10) totalSec = `0${totalSec}`;
+            durationEl.innerText = `${totalMin}:${totalSec}`;
+        });
+
+        progressArea.addEventListener('click', (e) => {
+            let progressWidth = progressArea.clientWidth;
+            let clickedOffsetX = e.offsetX;
+            let songDuration = audio.duration;
+            audio.currentTime = (clickedOffsetX / progressWidth) * songDuration;
+            if(audio.paused) togglePlay();
+        });
+
+        audio.addEventListener('ended', () => {
+            playIcon.classList.remove('fa-pause');
+            playIcon.classList.add('fa-play');
+            albumCover.style.animationPlayState = 'paused';
+            progressBar.style.width = '0%';
+        });
+
+        function criarEstrelas() {
+            const stars = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                stars.appendChild(star);
+            }
+        }
+
+        function criarCoracoes() {
+            const hearts = document.getElementById('floatingHearts');
+            setInterval(() => {
+                const heart = document.createElement('div');
+                heart.className = 'heart-float';
+                heart.innerText = ['❤️', '💕', '💖', '💗', '💝'][Math.floor(Math.random() * 5)];
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                hearts.appendChild(heart);
+                setTimeout(() => heart.remove(), 10000);
+            }, 3000);
+        }
+
+        criarEstrelas();
+        criarCoracoes();
+        gerarFrase();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jardim Virtual para Beatriz 🌸</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    
+    * { box-sizing: border-box; }
+    body { margin:0; padding:0; background:linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%);
+      font-family:'Quicksand',sans-serif; overflow:hidden; position:relative; height:100vh; user-select: none; 
+      transition: background 3s ease; 
+    }
+
+    
+    body.night-mode {
+      background: linear-gradient(to bottom, #0B1026 0%, #2B32B2 100%);
+    }
+    
+    
+    body.night-mode .ground {
+      filter: brightness(0.6);
+    }
+    body.night-mode .hills {
+      filter: brightness(0.5);
+    }
+    body.night-mode .tree {
+      filter: brightness(0.7);
+    }
+    body.night-mode .plant-container {
+      filter: brightness(0.85);
+    }
+    body.night-mode .pond-water {
+      filter: brightness(0.7) contrast(1.2);
+    }
+
+   
+    @keyframes wind-sway {
+      0% { transform: rotate(0deg) skewX(0deg); }
+      25% { transform: rotate(2deg) skewX(1deg); }
+      75% { transform: rotate(-1deg) skewX(0deg); }
+      100% { transform: rotate(0deg) skewX(0deg); }
+    }
+    .swaying { transform-origin: bottom center; animation: wind-sway 4s ease-in-out infinite; }
+
+   
+    @keyframes collect-pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.4); opacity: 1; }
+        100% { transform: scale(0) translateY(-20px); opacity: 0; }
+    }
+    .collect-anim {
+        animation: collect-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+        pointer-events: none;
+    }
+
+    /* Animação de Partículas de Terra */
+    @keyframes particle-explode {
+        0% { transform: translate(0,0) scale(1); opacity: 1; }
+        100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+    .dirt-particle {
+        position: absolute; width: 6px; height: 6px; background: #5D4037;
+        border-radius: 50%; pointer-events: none; z-index: 10;
+        animation: particle-explode 0.6s ease-out forwards;
+    }
+
+    /* --- Cenário --- */
+    .sky { position:absolute; top:0; left:0; width:100%; height:70%; z-index:1; pointer-events: none;}
+    
+    /* Estrelas (Geradas via JS na noite) */
+    .star {
+      position: absolute; background: white; border-radius: 50%;
+      box-shadow: 0 0 5px rgba(255,255,255,0.8);
+      animation: twinkle 4s infinite ease-in-out;
+      opacity: 0;
+    }
+    @keyframes twinkle { 0%,100%{opacity:0.3; transform:scale(0.8);} 50%{opacity:1; transform:scale(1.2);} }
+
+    /* Vaga-lumes */
+    .firefly {
+      position: absolute; width: 4px; height: 4px; background: #FFEB3B;
+      border-radius: 50%; box-shadow: 0 0 8px #FFEB3B;
+      opacity: 0; pointer-events: none; z-index: 20;
+      animation: firefly-float 15s infinite linear, firefly-glow 3s infinite ease-in-out;
+    }
+    @keyframes firefly-float {
+      0% { transform: translate(0,0); } 25% { transform: translate(50px, -30px); }
+      50% { transform: translate(20px, 40px); } 75% { transform: translate(-40px, 10px); } 100% { transform: translate(0,0); }
+    }
+    @keyframes firefly-glow { 0%,100%{opacity:0;} 50%{opacity:1;} }
+
+    /* Colinas */
+    .hills {
+        position: absolute; bottom: 30%; left: 0; width: 120%; height: 80px;
+        background: #81C784; border-radius: 50% 50% 0 0 / 40px 40px 0 0;
+        z-index: 1; opacity: 0.6; transform: translateX(-10%); transition: filter 3s;
+    }
+
+    .ground {
+      position:absolute; bottom:0; left:0; width:100%; height:30%;
+      background: 
+        linear-gradient(to bottom, rgba(141, 110, 99, 0.9) 0%, rgba(93, 64, 55, 0.95) 100%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+      z-index:2; cursor:pointer;
+      border-top: 10px solid #7CB342; 
+      box-shadow: inset 0 20px 50px rgba(0,0,0,0.2);
+      transition: filter 3s;
+    }
+
+    .grass-tuft {
+      position: absolute; bottom: 30%; width: 12px; height: 18px;
+      background: #7CB342; border-radius: 50% 50% 0 0;
+      box-shadow: 2px 0 0 #558B2F;
+      z-index: 3; pointer-events: none;
+      transform-origin: bottom center;
+      animation: wind-sway 3s ease-in-out infinite alternate;
+    }
+
+    /* SOL / LUA */
+    .celestial-body {
+      position:absolute; top:40px; right:60px; width:90px; height:90px;
+      border-radius:50%; z-index:1;
+      transition: all 3s ease;
+    }
+    
+    /* Estilo Sol */
+    .celestial-body.sun {
+      background: radial-gradient(circle, #FFF59D 20%, #FBC02D 100%);
+      box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+      animation: pulse-sun 6s infinite alternate;
+    }
+    
+    /* Estilo Lua */
+    .celestial-body.moon {
+      background: #FEFCD7;
+      box-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+    }
+    .celestial-body.moon::after {
+       content:''; position:absolute; top:20px; left:25px; width:15px; height:15px; 
+       background:rgba(200,200,200,0.3); border-radius:50%;
+       box-shadow: 20px 10px 0 -3px rgba(200,200,200,0.3), 10px 25px 0 2px rgba(200,200,200,0.3);
+    }
+
+    @keyframes pulse-sun { 0%{transform:scale(1);} 100%{transform:scale(1.1);} }
+
+    /* Nuvens Dinâmicas */
+    .cloud {
+      position:absolute; background:#fff; border-radius:50px; z-index:1; 
+      opacity:0.9; pointer-events:none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    body.night-mode .cloud { opacity: 0.3; background: #B0BEC5; }
+    .cloud::after, .cloud::before { content:''; position:absolute; background:inherit; border-radius:50%; }
+    .cloud::after { width: 50%; height: 100%; top: -40%; left: 15%; }
+    .cloud::before { width: 40%; height: 80%; top: -30%; right: 15%; }
+
+    /* --- LAGO REALISTA --- */
+    .pond-container {
+      position: absolute; bottom: 5%; left: 5%; width: 400px; height: 180px; z-index: 2;
+      transform: perspective(800px) rotateX(20deg);
+    }
+    .pond {
+      position: relative; width: 100%; height: 100%;
+      border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+      box-shadow: 
+        0 0 0 12px #A1887F, 
+        0 0 0 16px rgba(161, 136, 127, 0.6),
+        inset 0 20px 50px rgba(0,0,0,0.4);
+      overflow: hidden; cursor: crosshair;
+    }
+    .pond-water {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: 
+        radial-gradient(ellipse at center, rgba(79, 195, 247, 0.8) 0%, rgba(2, 136, 209, 0.9) 70%, rgba(1, 87, 155, 1) 100%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='turbulence'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='15'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%230288D1' opacity='0.3' filter='url(%23turbulence)'/%3E%3C/svg%3E");
+      background-size: 100% 100%, 200% 200%;
+      border-radius: inherit; transition: filter 3s;
+      animation: water-ripple 10s linear infinite;
+    }
+    @keyframes water-ripple {
+      0% { background-position: 50% 50%, 0% 0%; }
+      100% { background-position: 50% 50%, 100% 100%; }
+    }
+    .pond-reflection {
+      position: absolute; top: 15%; left: 25%; width: 50%; height: 25%;
+      background: rgba(255, 255, 255, 0.25); border-radius: 50%; filter: blur(8px);
+      animation: reflection-shimmer 5s ease-in-out infinite alternate;
+    }
+    @keyframes reflection-shimmer {
+      0% { transform: scale(1) translateX(0) skewX(0deg); opacity: 0.25; }
+      100% { transform: scale(1.1) translateX(10px) skewX(5deg); opacity: 0.35; }
+    }
+    .lily-pad {
+      position: absolute; width: 35px; height: 30px; background: #66BB6A;
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      z-index: 3; pointer-events: none;
+    }
+    .lily-pad::after { content: ''; position: absolute; top: 50%; right: 0; width: 15px; height: 2px; background: rgba(0,0,0,0.3); transform: translateY(-50%); }
+    .lily-flower { position: absolute; font-size: 20px; z-index: 4; pointer-events: none; }
+
+    /* Boia de Pesca */
+    .bobber {
+      position: absolute; width: 12px; height: 12px;
+      background: red; border-radius: 50%; border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      z-index: 15; pointer-events: none; transition: top 0.2s;
+    }
+    .bobber::after { content:''; position: absolute; top:-6px; left:3px; width:2px; height:6px; background:white; }
+    .bobber.floating { animation: float-bobber 1s ease-in-out infinite; }
+    .bobber.sinking { animation: sink-bobber 0.3s forwards; }
+    @keyframes float-bobber { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-3px);} }
+    @keyframes sink-bobber { to{transform:translateY(15px); opacity: 0;} }
+
+    /* --- Árvore --- */
+    .tree { 
+      position:absolute; bottom:28%; right:10%; z-index:4; width:220px; height:300px; pointer-events: none; 
+      transform-origin: bottom center; transition: filter 3s;
+      animation: wind-sway 6s ease-in-out infinite alternate;
+    }
+    .tree-shadow {
+        position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+        width: 140px; height: 30px; background: rgba(0,0,0,0.25);
+        border-radius: 50%; filter: blur(6px); z-index: -1;
+    }
+    .tree-trunk {
+      position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+      width:50px; height:140px;
+      background: linear-gradient(to right, #5D4037, #8D6E63, #5D4037); border-radius: 5px;
+    }
+    .tree-leaves {
+      position:absolute; bottom:110px; left:50%; transform:translateX(-50%);
+      width:180px; height:180px; background: #33691E; border-radius:50%;
+      box-shadow: -40px 20px 0 -20px #558B2F, 40px 20px 0 -20px #558B2F, 0 -30px 0 -10px #7CB342, inset 10px 10px 20px rgba(255,255,255,0.1);
+    }
+    .tree-leaves::before { content:''; position:absolute; top:20px; left:-30px; width:100px; height:100px; background: #558B2F; border-radius:50%; z-index:-1; }
+    .tree-leaves::after { content:''; position:absolute; top:20px; right:-30px; width:100px; height:100px; background: #558B2F; border-radius:50%; z-index:-1; }
+    .tree-apples { position:absolute; bottom:110px; left:50%; transform:translateX(-50%); width:160px; height:160px; z-index: 5; pointer-events: auto; }
+    
+    .beehive {
+      position:absolute; bottom:70px; right:120px; width:40px; height:50px;
+      background: repeating-linear-gradient(to bottom, #FFB300, #FFB300 8px, #F57F17 8px, #F57F17 10px);
+      border-radius: 20px 20px 25px 25px;
+      box-shadow: 2px 5px 10px rgba(0,0,0,0.2); z-index:5;
+      transform-origin: top center;
+      animation: hive-sway 3s ease-in-out infinite alternate;
+    }
+    @keyframes hive-sway { from{transform:rotate(-3deg);} to{transform:rotate(3deg);} }
+    .beehive-hole { position:absolute; bottom:15px; left:50%; transform:translateX(-50%); width:14px; height:14px; background:#3E2723; border-radius:50%; }
+
+    /* --- GATINHO (PET) --- */
+    .cat-container {
+      position: absolute; bottom: 31%; left: 40%; z-index: 5;
+      cursor: pointer; width: 60px; height: 50px;
+      transition: transform 0.2s;
+    }
+    
+    .cat-body {
+      position: absolute; bottom: -10px; left: 770px; width: 40px; height: 35px;
+      background: #fff; border-radius: 25px 25px 15px 15px;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+      animation: cat-breathe 3s ease-in-out infinite alternate;
+    }
+    .cat-head {
+      position: absolute; top: -5px; left: 770px; width: 30px; height: 28px;
+      background: #fff; border-radius: 50%; z-index: 2;
+      box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+      animation: cat-breathe 3s ease-in-out infinite alternate-reverse;
+    }
+    .cat-ear {
+      position: absolute; top: -8px; width: 0; height: 0;
+      border-left: 6px solid transparent; border-right: 6px solid transparent;
+      border-bottom: 12px solid #fff;
+    }
+    .ear-l { left: 0; transform: rotate(-15deg); }
+    .ear-r { right: 0; transform: rotate(15deg); }
+    
+    .cat-eye {
+      position: absolute; top: 10px; width: 3px; height: 3px;
+      background: #333; border-radius: 50%;
+    }
+    .eye-l { left: 8px; } .eye-r { right: 8px; }
+    
+    .cat-tail {
+      position: absolute; bottom: 2px; right: -760px;
+      width: 15px; height: 20px; border: 4px solid #fff;
+      border-color: transparent #fff #fff transparent;
+      border-radius: 50%; z-index: 0;
+      transform-origin: bottom left;
+      animation: tail-wag 3s ease-in-out infinite;
+    }
+    
+    @keyframes cat-breathe { 0% { transform: scaleY(1); } 100% { transform: scaleY(1.02); } }
+    @keyframes tail-wag { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(15deg); } }
+
+    /* --- Criaturas e Itens --- */
+    .apple {
+      position:absolute; cursor:pointer; z-index:6; font-size: 24px;
+      filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); transition: transform .2s;
+    }
+    .apple.growing { animation: apple-grow 6s ease-out forwards; pointer-events:none; opacity:0.5; }
+    .apple.ready { animation: apple-sway 4s ease-in-out infinite; cursor:pointer; }
+    .apple.ready:hover { transform: scale(1.3); }
+    @keyframes apple-grow { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes apple-sway { 0%,100%{transform:rotate(-5deg);} 50%{transform:rotate(5deg);} }
+
+    .bee {
+      position:absolute; font-size:20px; z-index:10; pointer-events:none;
+      filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.2)); transition: transform 0.1s linear;
+    }
+    .worm {
+      position:absolute; font-size:22px; z-index:3; cursor:pointer; transition:transform .2s;
+      animation: worm-wiggle 1s infinite alternate; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+    }
+    .worm:hover { transform:scale(1.4) translateY(-5px); }
+    @keyframes worm-wiggle { from{transform: rotate(-5deg);} to{transform: rotate(5deg);} }
+
+    .fish-jump {
+      position:absolute; font-size:32px; z-index:11;
+      animation: fish-arc 1.5s cubic-bezier(0.15, 0.45, 0.25, 1) forwards; pointer-events:none;
+    }
+    @keyframes fish-arc {
+      0% { transform: translate(-20px, 20px) rotate(-45deg) scale(0.5); opacity:0; }
+      20% { opacity:1; transform: translate(0, -80px) rotate(-20deg) scale(1); }
+      50% { transform: translate(20px, -120px) rotate(0deg) scale(1); }
+      80% { opacity:1; transform: translate(40px, -80px) rotate(20deg) scale(1); }
+      100% { transform: translate(60px, 20px) rotate(45deg) scale(0.5); opacity:0; }
+    }
+
+    /* --- UI e Ferramentas --- */
+    .fishing-rod {
+      position:fixed; bottom:30px; right:30px; font-size:38px; cursor:pointer; z-index:100;
+      transition:transform .2s; filter:drop-shadow(3px 3px 5px rgba(0,0,0,0.3));
+      background: #fff; border-radius: 50%; padding: 10px; width: 70px; height: 70px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .fishing-rod:hover { transform:scale(1.1) rotate(-5deg); background: #f0f0f0; }
+    .fishing-rod.active { animation: fishing-cast 0.8s ease-in-out; }
+    @keyframes fishing-cast { 0%,100%{transform:rotate(0);} 50%{transform:rotate(-45deg) translateY(10px);} }
+
+    .fish-counter {
+      position:fixed; bottom:110px; right:30px; background:rgba(255,255,255,0.95);
+      padding:10px 20px; border-radius:20px; font-weight:700; color: #444;
+      box-shadow:0 4px 15px rgba(0,0,0,0.15); z-index:100; display: flex; gap: 15px; font-size: 16px;
+    }
+
+    .plant-container { position: absolute; z-index: 4; transform-origin: bottom center; transition: filter 3s; }
+    .plant-shadow {
+        position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+        width: 30px; height: 10px; background: rgba(0,0,0,0.25);
+        border-radius: 50%; filter: blur(3px); z-index: -1; pointer-events: none;
+    }
+    .plant {
+      position:relative; cursor:pointer; transition:transform .2s ease;
+      animation: popin .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      user-select:none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+    }
+    .plant.flower { animation: wind-sway 4s ease-in-out infinite alternate; }
+    @keyframes popin { 0% {transform:scale(0);} 100% {transform:scale(1);} }
+    .plant-container:hover .plant { transform:scale(1.15); }
+
+    .controls {
+      position:fixed; top:20px; left:50%; transform:translateX(-50%);
+      background:rgba(255,255,255,0.85); backdrop-filter: blur(5px);
+      padding:15px 30px; border-radius:25px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.1); z-index:100;
+      display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center;
+      max-width: 95vw; border: 1px solid rgba(255,255,255,0.4);
+    }
+    .flower-btn {
+      width:45px; height:45px; border:3px solid transparent; border-radius:50%;
+      cursor:pointer; transition:all .2s; font-size:24px;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .flower-btn:hover { transform:translateY(-3px); }
+    .flower-btn.selected { border-color:#FFD700; transform:scale(1.1); box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+
+    .tool-btn {
+      padding:10px 18px; border-radius:20px; border:none; font-weight:700; cursor:pointer;
+      background:#E1F5FE; color:#0277BD; transition: all 0.2s;
+    }
+    .tool-btn:hover { background: #B3E5FC; }
+    .tool-btn.active { background: #0288D1; color: white; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+
+    .action-btn {
+      padding:8px 16px; border:none; border-radius:15px; font-size:13px; font-weight: 600;
+      cursor:pointer; transition:all .2s; color: white;
+    }
+    .shop-btn { background: #7E57C2; box-shadow: 0 4px 0 #5E35B1; }
+    .shop-btn:active { transform: translateY(4px); box-shadow: none; }
+    .clear-btn { background: #FF7043; }
+    .reset-btn { background: #D32F2F; }
+    .clear-btn:hover, .reset-btn:hover { filter: brightness(1.1); }
+
+    .info { width:100%; text-align:center; color:#EC407A; font-weight:700; margin-bottom: 5px; font-size: 15px; }
+    .stats { display:flex; gap:10px; align-items:center; background: #f5f5f5; padding: 5px 10px; border-radius: 12px; }
+    .stat-box { font-size:13px; font-weight:700; color:#555; }
+
+    .connection-status {
+      position:fixed; top:90px; right:20px; padding:6px 14px; border-radius:20px;
+      font-size:11px; font-weight:700; text-transform: uppercase; letter-spacing: 0.5px;
+      z-index:101; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .status-connected { background:#4CAF50; color:white; }
+    .status-disconnected { background:#EF5350; color:white; }
+    .status-loading { background:#FFA726; color:white; }
+
+    .back-btn {
+      position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      padding:12px 30px; background:#EC407A; color:white; border:none; border-radius:30px;
+      font-size:16px; font-weight:700; cursor:pointer;
+      box-shadow:0 5px 20px rgba(236, 64, 122, 0.4); z-index:101; transition:all .25s ease;
+    }
+    .back-btn:hover { background:#D81B60; transform:translateX(-50%) scale(1.05); }
+
+    .drop-msg {
+      position:absolute; font-weight: bold; pointer-events:none; z-index:1000;
+      text-shadow: 0 2px 2px white; animation: floatUp 1s forwards;
+    }
+    @keyframes floatUp { 0%{transform:translateY(0); opacity:1;} 100%{transform:translateY(-50px); opacity:0;} }
+
+    /* Modal da Loja */
+    .shop-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:200; }
+    .shop-modal { width:min(700px,90vw); background:#fff; border-radius:24px; padding:25px; box-shadow:0 20px 50px rgba(0,0,0,0.3); animation: scaleIn 0.3s ease; }
+    @keyframes scaleIn { from{transform:scale(0.8); opacity:0;} to{transform:scale(1); opacity:1;} }
+    .shop-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+    .shop-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:15px; margin-top:15px; }
+    .shop-item { background: #FAFAFA; border:2px solid #EEEEEE; border-radius:16px; padding:15px; display:flex; flex-direction:column; gap:10px; transition: transform 0.2s; }
+    .shop-item:hover { transform: translateY(-3px); border-color: #E0E0E0; }
+    .shop-item h4 { margin:0; color: #333; }
+    .price-tag { background: #ECEFF1; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: bold; color: #455A64; display: inline-block; }
+    .msg-input { width:100%; border:1px solid #ddd; border-radius:12px; padding:10px; font-family:inherit; font-size: 13px; resize:none; height: 50px; outline: none; transition: border 0.2s; }
+    .msg-input:focus { border-color: #7E57C2; }
+    .redeem-btn { background:#66BB6A; color:white; border:none; border-radius:12px; padding:10px; font-weight:700; cursor:pointer; transition: background 0.2s; }
+    .redeem-btn:hover { background: #43A047; }
+    .redeem-btn:disabled { background:#CFD8DC; cursor:not-allowed; color: #90A4AE; }
+
+    /* === NOVO: ESTILO DO MODAL DE BOAS-VINDAS === */
+    .welcome-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(5px); z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+        transition: opacity 0.5s ease;
+    }
+    .welcome-modal {
+        background: white; padding: 30px; border-radius: 20px;
+        text-align: center; max-width: 90%; width: 400px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .welcome-modal h2 { color: #EC407A; margin-top: 0; font-size: 24px; }
+    .welcome-modal p { font-size: 18px; color: #555; margin-bottom: 25px; line-height: 1.5; }
+    .welcome-modal button {
+        background: #66BB6A; color: white; border: none;
+        padding: 12px 30px; border-radius: 50px;
+        font-size: 18px; font-weight: bold; cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+    }
+    .welcome-modal button:hover { transform: scale(1.05); background: #43A047; }
+
+  </style>
+</head>
+<body>
+
+  <audio id="bgMusic" loop>
+    <source src="1205.MP3" type="audio/mpeg">
+  </audio>
+
+  <div id="welcomeOverlay" class="welcome-overlay">
+      <div class="welcome-modal">
+          <h2>🌸 Bem-vinda! 🌸</h2>
+          <p>Boas vindas ao seu jardim! <br> Cuide bem dele.</p>
+          <button id="startBtn">Começar 🎵</button>
+      </div>
+  </div>
+
+  <div class="sky" id="skyLayer"></div>
+  <div class="celestial-body sun" id="celestialBody"></div>
+  
+  <div class="hills"></div>
+
+  <div id="connectionStatus" class="connection-status status-loading">Conectando...</div>
+
+  <div class="ground" id="ground"></div>
+  
+  <div class="cat-container" id="petCat" title="Miau! 🐱">
+    <div class="cat-tail"></div>
+    <div class="cat-body"></div>
+    <div class="cat-head">
+      <div class="cat-ear ear-l"></div>
+      <div class="cat-ear ear-r"></div>
+      <div class="cat-eye eye-l"></div>
+      <div class="cat-eye eye-r"></div>
+    </div>
+  </div>
+  
+  <div class="grass-tuft" style="left: 5%;"></div>
+  <div class="grass-tuft" style="left: 25%; height: 20px; animation-delay: 0.5s"></div>
+  <div class="grass-tuft" style="left: 45%; animation-delay: 1s"></div>
+  <div class="grass-tuft" style="left: 70%; height: 18px; animation-delay: 1.5s"></div>
+  <div class="grass-tuft" style="left: 92%; animation-delay: 0.2s"></div>
+
+  <div class="pond-container">
+    <div class="pond" id="pond">
+      <div class="pond-water"></div>
+      <div class="pond-reflection"></div>
+      <div class="lily-pad" style="top: 30%; left: 20%; transform: rotate(15deg);"></div>
+      <div class="lily-pad" style="top: 60%; left: 70%; transform: rotate(-10deg);"></div>
+      <div class="lily-flower" style="top: 25%; left: 25%;">🌸</div>
+    </div>
+  </div>
+
+  <div class="tree">
+    <div class="tree-shadow"></div>
+    <div class="tree-trunk"></div>
+    <div class="tree-leaves"></div>
+    <div class="tree-apples" id="treeApples"></div>
+    <div class="beehive"><div class="beehive-hole"></div></div>
+  </div>
+
+  <div class="fishing-rod" id="fishingRod" title="Clique para pescar!">🎣</div>
+  <div class="fish-counter">
+    <span>🐟 <span id="fishCount">0</span></span>
+    <span>🪱 <span id="wormCount">0</span></span>
+    <span>🍎 <span id="appleCount">0</span></span>
+  </div>
+
+  <div class="controls">
+    <div class="info">🌸 Plante flores, pegue maçãs, colete minhocas, pesque peixinhos e resgate premios!! 🌸</div>
+    
+    <div class="flower-btn selected" data-flower="🌸" style="background:#FFCDD2;">🌸</div>
+    <div class="flower-btn" data-flower="🌺" style="background:#F8BBD0;">🌺</div>
+    <div class="flower-btn" data-flower="🌻" style="background:#FFF9C4;">🌻</div>
+    <div class="flower-btn" data-flower="🌷" style="background:#F06292;">🌷</div>
+    <div class="flower-btn" data-flower="🌹" style="background:#EF9A9A;">🌹</div>
+    <div class="flower-btn" data-flower="🌼" style="background:#FFF59D;">🌼</div>
+
+    <button id="waterBtn" class="tool-btn">🚿 Regar</button>
+    <button id="pruneBtn" class="tool-btn">✂️ Podar</button>
+
+    <div class="stats">
+      <div class="stat-box">🌱 <span id="count">0</span></div>
+      <div class="stat-box" style="color:#4CAF50">➕ <span id="added">0</span></div>
+      <div class="stat-box" style="color:#F44336">➖ <span id="removed">0</span></div>
+    </div>
+
+    <button class="action-btn shop-btn" onclick="openShop()">🛍️ Loja</button>
+    <button class="action-btn clear-btn" onclick="clearGarden()">Limpar</button>
+    <button class="action-btn reset-btn" onclick="resetAll()">Zerar</button>
+  </div>
+
+  <button class="back-btn" onclick="goBack()">🔙 Voltar</button>
+
+  <div id="shopOverlay" class="shop-overlay" onclick="closeShop(event)">
+    <div class="shop-modal" onclick="event.stopPropagation()">
+      <div class="shop-header">
+        <h3 style="margin:0">Lojinha da gatinha  💖</h3>
+        <button onclick="closeShop()" style="background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
+      </div>
+      <div style="margin-bottom:10px; color:#666; font-size:14px;">
+        Custo único: <b>20 🐟 + 100 🍎</b> por item.<br>
+        Seu saldo: 🐟 <span id="shopFish">0</span> • 🍎 <span id="shopApples">0</span>
+      </div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    /* =================== CONFIGURAÇÃO FIREBASE =================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyA9cS4tdhvNE3Wx-JYa5Wfft0TCQLVuMzg",
+      authDomain: "xandalove-2f7f3.firebaseapp.com",
+      databaseURL: "https://xandalove-2f7f3-default-rtdb.firebaseio.com",
+      projectId: "xandalove-2f7f3",
+      storageBucket: "xandalove-2f7f3.firebasestorage.app",
+      messagingSenderId: "172297779195",
+      appId: "1:172297779195:web:833f5ee0c81bffb4cdbd5e"
+    };
+
+    const NOTIFY_WEBHOOK_URL = "https://discord.com/api/webhooks/1424490532024881308/PTaihkkcJa9XtBMpgBTimL69xpZXZxuksAq46BXsaNKwn9v-w-FhOEk92ftG87XPAlpE";
+
+    /* =================== Lógica do Jogo =================== */
+    let database, isFirebaseReady = false, hasLoadedFromFirebase = false;
+    const statusEl = document.getElementById('connectionStatus');
+    
+    let selectedFlower = '🌸';
+    let wateringMode = false;
+    let pruningMode = false;
+    let plants = [];
+    let stats = { totalAdded: 0, totalRemoved: 0 };
+    let inventory = { fish: 0, worms: 0, apples: 0 };
+    let isLoading = true;
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      database = firebase.database();
+      database.ref('.info/connected').on('value', (snap) => {
+        if (snap.val() === true) {
+          isFirebaseReady = true;
+          statusEl.textContent = '🟢 Conectado';
+          statusEl.className = 'connection-status status-connected';
+          if (!hasLoadedFromFirebase) { hasLoadedFromFirebase = true; loadFromFirebase(); }
+        } else {
+          isFirebaseReady = false;
+          statusEl.textContent = '🔴 Desconectado';
+          statusEl.className = 'connection-status status-disconnected';
+        }
+      });
+    } catch (e) {
+      statusEl.textContent = '🔴 Erro Firebase';
+      statusEl.className = 'connection-status status-disconnected';
+      isFirebaseReady = false;
+      loadFromCookie(); isLoading = false; loadGarden(); updateInventoryUI();
+    }
+
+    /* =================== CONFIGURAÇÃO DA MÚSICA & MODAL DE BOAS-VINDAS =================== */
+    const bgAudio = document.getElementById('bgMusic');
+    bgAudio.volume = 0.4; 
+
+    // Função original de backup (caso algo dê errado com o modal)
+    function startMusicOnFirstClick() {
+        bgAudio.play().then(() => {
+            console.log("Música iniciada! 🎵");
+        }).catch(error => {
+            console.log("Erro ao tentar tocar:", error);
+        });
+        document.body.removeEventListener('click', startMusicOnFirstClick);
+    }
+    
+    // Configura o botão "Começar" do Modal
+    document.addEventListener('DOMContentLoaded', () => {
+        const welcomeOverlay = document.getElementById('welcomeOverlay');
+        const startBtn = document.getElementById('startBtn');
+
+        if(startBtn) {
+            startBtn.addEventListener('click', () => {
+                // Tenta tocar a música assim que clicar no botão
+                bgAudio.play().then(() => {
+                    console.log("Música iniciada pelo modal! 🎵");
+                }).catch(e => console.log("Erro ao iniciar áudio:", e));
+
+                // Esconde o modal
+                welcomeOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    welcomeOverlay.remove();
+                }, 500);
+
+                // Remove o ouvinte de clique global para não dar conflito
+                document.body.removeEventListener('click', startMusicOnFirstClick);
+            });
+        } else {
+            // Fallback se o modal não existir
+            document.body.addEventListener('click', startMusicOnFirstClick);
+        }
+    });
+
+    document.querySelectorAll('.flower-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.flower-btn').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedFlower = this.dataset.flower;
+      });
+    });
+
+    const waterBtn = document.getElementById('waterBtn');
+    const pruneBtn = document.getElementById('pruneBtn');
+
+    waterBtn.addEventListener('click', () => {
+      wateringMode = !wateringMode;
+      if(wateringMode && pruningMode) {
+        pruningMode = false; pruneBtn.classList.remove('active'); pruneBtn.textContent = '✂️ Podar';
+      }
+      waterBtn.classList.toggle('active', wateringMode);
+      waterBtn.textContent = wateringMode ? '🚿 Regando...' : '🚿 Regar';
+    });
+
+    pruneBtn.addEventListener('click', () => {
+        pruningMode = !pruningMode;
+        if(pruningMode && wateringMode) {
+            wateringMode = false; waterBtn.classList.remove('active'); waterBtn.textContent = '🚿 Regar';
+        }
+        pruneBtn.classList.toggle('active', pruningMode);
+        pruneBtn.textContent = pruningMode ? '✂️ Podando...' : '✂️ Podar';
+    });
+
+    /* --- Plantar --- */
+    const ground = document.getElementById('ground');
+    ground.addEventListener('click', (e) => {
+      if(e.target.classList.contains('worm') || e.target.classList.contains('plant')) return;
+      if(wateringMode || pruningMode) return;
+      const rect = ground.getBoundingClientRect();
+      const x = e.clientX;
+      const y = Math.min(rect.bottom - 20, Math.max(rect.top + 20, e.clientY));
+      createDirtExplosion(x, y);
+      plantSprout(x, y);
+    });
+
+    function createDirtExplosion(x, y) {
+        for(let i=0; i<8; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'dirt-particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 30 + Math.random() * 40;
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance - 30;
+            particle.style.setProperty('--tx', `${tx}px`);
+            particle.style.setProperty('--ty', `${ty}px`);
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 600);
+        }
+    }
+
+    function plantSprout(x, y) {
+      const size = (24 + Math.random() * 20) + 'px';
+      const item = { 
+        id: Date.now().toString() + '-' + Math.random().toString(36).slice(2),
+        x, y, size, 
+        type: selectedFlower, 
+        stage: 'sprout', 
+        water: 0, 
+        waterNeeded: 3 
+      };
+      plants.push(item);
+      stats.totalAdded++;
+      renderPlant(item);
+      saveAll();
+      updateStats();
+    }
+
+    function waterPlant(id) {
+      const p = plants.find(pl => pl.id === id); if(!p) return;
+      const drop = document.createElement('div'); 
+      drop.textContent = '💧'; drop.style.position = 'absolute';
+      drop.style.left = p.x + 'px'; drop.style.top = (p.y - 30) + 'px';
+      drop.className = 'drop-msg';
+      document.body.appendChild(drop); 
+      setTimeout(() => drop.remove(), 800);
+      p.water++;
+      if (p.water >= p.waterNeeded && p.stage === 'sprout') {
+        p.stage = 'flower';
+        const elContainer = document.querySelector(`[data-id="${p.id}"]`);
+        if (elContainer) {
+          const elPlant = elContainer.querySelector('.plant');
+          elPlant.textContent = p.type;
+          elPlant.classList.remove('sprout');
+          elPlant.classList.add('flower');
+        }
+      }
+      savePlantsAndStats();
+    }
+
+    function removePlant(id) {
+      const idx = plants.findIndex(p => p.id === id);
+      if (idx > -1) {
+        plants.splice(idx, 1);
+        stats.totalRemoved++;
+        if (isFirebaseReady) {
+          database.ref(`garden/plants/${id}`).remove();
+          database.ref('garden/stats').set(stats);
+        } else saveToCookie();
+        const el = document.querySelector(`[data-id="${id}"]`);
+        if (el) el.remove();
+        updateStats();
+      }
+    }
+
+    function renderPlant(p) {
+      const container = document.createElement('div');
+      container.className = 'plant-container';
+      container.style.left = p.x + 'px';
+      container.style.top = p.y + 'px';
+      container.dataset.id = p.id;
+      const shadow = document.createElement('div');
+      shadow.className = 'plant-shadow';
+      const el = document.createElement('div');
+      el.className = 'plant ' + (p.stage === 'sprout' ? 'sprout' : 'flower');
+      el.textContent = (p.stage === 'sprout') ? '🌱' : p.type;
+      el.style.fontSize = p.size;
+      container.appendChild(shadow);
+      container.appendChild(el);
+      container.onclick = function(e) {
+        e.stopPropagation();
+        if (p.stage === 'sprout' && wateringMode) { waterPlant(p.id); } 
+        else if (pruningMode) { removePlant(p.id); }
+      };
+      document.body.appendChild(container);
+    }
+
+    /* --- Pescaria --- */
+    const pond = document.getElementById('pond');
+    const fishingRod = document.getElementById('fishingRod');
+    let isFishing = false;
+
+    fishingRod.addEventListener('click', function() {
+      if(isFishing) return;
+      if (inventory.worms <= 0) { alert('Você precisa de minhocas para pescar! 🪱\nProcure-as no chão.'); return; }
+      inventory.worms--;
+      updateInventoryUI();
+      saveInventory();
+      isFishing = true;
+      fishingRod.classList.add('active');
+      const rect = pond.getBoundingClientRect();
+      const bobber = document.createElement('div');
+      bobber.className = 'bobber floating';
+      bobber.style.left = (rect.left + rect.width/2 + 20) + 'px'; 
+      bobber.style.top = (rect.top + rect.height/2 - 20) + 'px';
+      document.body.appendChild(bobber);
+      setTimeout(() => {
+        const success = Math.random() < 0.65;
+        if (success) {
+            bobber.classList.remove('floating');
+            bobber.classList.add('sinking');
+            setTimeout(() => {
+                inventory.fish++;
+                updateInventoryUI();
+                saveInventory();
+                createFishJump(bobber.style.left, bobber.style.top);
+                bobber.remove();
+            }, 300);
+        } else {
+            showFloatingMsg(window.innerWidth - 100, window.innerHeight - 100, 'Nada...');
+            bobber.remove();
+        }
+        fishingRod.classList.remove('active');
+        isFishing = false;
+      }, 2500);
+    });
+
+    pond.addEventListener('click', function(e) {
+      const rect = pond.getBoundingClientRect();
+      const ripple = document.createElement('div');
+      ripple.style.position = 'absolute';
+      ripple.style.left = (e.clientX - rect.left - 25) + 'px';
+      ripple.style.top = (e.clientY - rect.top - 25) + 'px';
+      ripple.style.width = '50px'; ripple.style.height = '50px';
+      ripple.style.borderRadius = '50%';
+      ripple.style.border = '2px solid rgba(255,255,255,0.6)';
+      ripple.style.animation = 'scaleIn 0.8s ease-out forwards';
+      ripple.style.pointerEvents = 'none';
+      pond.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 800);
+    });
+
+    function createFishJump(x, y) {
+      const fish = document.createElement('div');
+      fish.className = 'fish-jump';
+      fish.textContent = ['🐟','🐠','🐡'][Math.floor(Math.random()*3)];
+      if (!x || !y) {
+          const rect = pond.getBoundingClientRect();
+          x = (rect.left + rect.width/2) + 'px';
+          y = (rect.top + rect.height/2) + 'px';
+      }
+      fish.style.left = x; fish.style.top = y;
+      document.body.appendChild(fish);
+      setTimeout(() => fish.remove(), 1500);
+    }
+
+    function createAutoFishJump() {
+        const rect = pond.getBoundingClientRect();
+        const randomX = rect.left + 40 + Math.random() * (rect.width - 80);
+        const randomY = rect.top + 40 + Math.random() * (rect.height - 80);
+        createFishJump(randomX + 'px', randomY + 'px');
+        setTimeout(createAutoFishJump, Math.random() * 10000 + 5000);
+    }
+
+    /* === NUVENS DINÂMICAS === */
+    function startClouds() {
+        function spawnCloud() {
+            const sky = document.getElementById('skyLayer');
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            const width = 80 + Math.random() * 100;
+            cloud.style.width = width + 'px';
+            cloud.style.height = (width * 0.4) + 'px';
+            cloud.style.top = (Math.random() * 60) + '%';
+            cloud.style.left = '-200px';
+            const duration = 25 + Math.random() * 30;
+            cloud.style.transition = `transform ${duration}s linear`;
+            sky.appendChild(cloud);
+            setTimeout(() => { cloud.style.transform = `translateX(${window.innerWidth + 300}px)`; }, 100);
+            setTimeout(() => { if(cloud.parentNode) cloud.remove(); }, duration * 1000 + 500);
+            setTimeout(spawnCloud, Math.random() * 10000 + 5000);
+        }
+        spawnCloud(); setTimeout(spawnCloud, 4000); setTimeout(spawnCloud, 8000);
+    }
+
+    /* === ITENS ALEATÓRIOS === */
+    function createWorm() {
+      const worm = document.createElement('div');
+      worm.className = 'worm';
+      worm.textContent = '🪱';
+      const groundHeight = window.innerHeight * 0.3;
+      worm.style.bottom = (Math.random() * (groundHeight - 40) + 10) + 'px';
+      worm.style.left = (Math.random() * 90 + 5) + '%';
+      const duration = 6 + Math.random() * 4;
+      worm.style.transition = `transform ${duration}s linear`;
+      worm.onclick = function(e) {
+        e.stopPropagation();
+        if(worm.classList.contains('collect-anim')) return;
+        inventory.worms++; updateInventoryUI(); saveInventory();
+        showFloatingMsg(e.clientX, e.clientY, '+1 🪱');
+        worm.classList.add('collect-anim'); setTimeout(() => worm.remove(), 400);
+      };
+      document.body.appendChild(worm);
+      setTimeout(() => {
+        const direction = Math.random() < 0.5 ? -1 : 1;
+        worm.style.transform = `translateX(${direction * (50 + Math.random() * 100)}px)`;
+      }, 100);
+      setTimeout(() => { if(worm.parentNode && !worm.classList.contains('collect-anim')) worm.remove(); }, duration * 1000);
+    }
+
+    function createApples() { growNewApple(); }
+    function growNewApple() {
+      const container = document.getElementById('treeApples');
+      if(container.children.length > 8) { setTimeout(growNewApple, 3000); return; }
+      const apple = document.createElement('div');
+      apple.className = 'apple growing';
+      apple.textContent = '🍎';
+      apple.style.left = (Math.random() * 80 + 10) + '%';
+      apple.style.top = (Math.random() * 80 + 10) + '%';
+      apple.style.transform = `rotate(${(Math.random() * 30) - 15}deg)`;
+      apple.onclick = function(e) {
+        e.stopPropagation();
+        if(!apple.classList.contains('ready') || apple.classList.contains('collect-anim')) return;
+        inventory.apples++; updateInventoryUI(); saveInventory();
+        showFloatingMsg(e.clientX, e.clientY, '+1 🍎');
+        apple.classList.add('collect-anim'); setTimeout(() => apple.remove(), 400);
+      };
+      container.appendChild(apple);
+      setTimeout(() => { apple.classList.remove('growing'); apple.classList.add('ready'); }, 6000);
+      setTimeout(growNewApple, Math.random() * 3000 + 2000);
+    }
+
+    function createBee() {
+      const bee = document.createElement('div');
+      bee.className = 'bee';
+      bee.textContent = '🐝';
+      const startSide = Math.random() < 0.5 ? 'left' : 'right';
+      bee.style.top = (50 + Math.random() * (window.innerHeight / 2)) + 'px';
+      if (startSide === 'left') {
+        bee.style.left = '-50px'; animateBee(bee, -50, window.innerWidth + 50);
+      } else {
+        bee.style.left = (window.innerWidth + 50) + 'px'; bee.style.transform = 'scaleX(-1)'; animateBee(bee, window.innerWidth + 50, -50);
+      }
+      document.body.appendChild(bee);
+      setTimeout(createBee, Math.random() * 6000 + 4000);
+    }
+
+    function animateBee(element, startX, endX) {
+      let startTime = null;
+      const duration = 8000 + Math.random() * 4000;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = (timestamp - startTime) / duration;
+        if (progress < 1) {
+          const currentX = startX + (endX - startX) * progress;
+          const yOffset = Math.sin(progress * Math.PI * 4) * 40; 
+          const facing = startX < endX ? 1 : -1;
+          element.style.transform = `translate(${currentX - startX}px, ${yOffset}px) scaleX(${facing})`;
+          requestAnimationFrame(step);
+        } else { element.remove(); }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function showFloatingMsg(x, y, text) {
+      const msg = document.createElement('div');
+      msg.className = 'drop-msg'; msg.textContent = text;
+      msg.style.left = x + 'px'; msg.style.top = y + 'px';
+      msg.style.color = '#fff'; msg.style.fontSize = '20px';
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 1000);
+    }
+
+    /* --- Funções de UI / Sistema --- */
+    function updateInventoryUI() {
+      document.getElementById('fishCount').textContent = inventory.fish;
+      document.getElementById('wormCount').textContent = inventory.worms;
+      document.getElementById('appleCount').textContent = inventory.apples;
+      document.getElementById('shopFish').textContent = inventory.fish;
+      document.getElementById('shopApples').textContent = inventory.apples;
+      updateShopButtons();
+    }
+
+    function clearGarden() {
+      if(confirm('Limpar todas as plantas?')) {
+        if(isFirebaseReady) database.ref('garden/plants').remove();
+        document.querySelectorAll('.plant-container').forEach(f => f.remove());
+        plants = []; savePlantsAndStats(); updateStats();
+      }
+    }
+
+    function resetAll() {
+      if(!confirm('ZERAR TUDO? Inventário e estatísticas serão perdidos.')) return;
+      plants = []; stats = { totalAdded: 0, totalRemoved: 0 }; inventory = { fish: 0, worms: 0, apples: 0 };
+      document.querySelectorAll('.plant-container').forEach(f => f.remove());
+      if(isFirebaseReady) {
+        database.ref().update({ 'garden/plants': null, 'garden/stats': stats, 'garden/inventory': inventory, 'garden/redemptions': null });
+      }
+      deleteCookie('gardenData'); saveToCookie(); updateStats(); updateInventoryUI();
+    }
+
+    function goBack() {
+      const target = 'backup.html';
+      fetch(target, {method:'HEAD'}).then(r => { if(r.ok) location.href = target; else history.back(); }).catch(() => history.back());
+    }
+
+    /* =================== PERSISTÊNCIA =================== */
+    function loadFromFirebase() {
+      if (!isFirebaseReady) { loadFromCookie(); isLoading=false; loadGarden(); updateInventoryUI(); initCreatures(); return; }
+      Promise.all([
+        database.ref('garden/plants').once('value'),
+        database.ref('garden/stats').once('value'),
+        database.ref('garden/inventory').once('value')
+      ]).then(([p, s, i]) => {
+          plants = p.val() ? Object.values(p.val()) : [];
+          if (s.val()) stats = s.val();
+          if (i.val()) inventory = i.val();
+          isLoading = false;
+          loadGarden(); updateInventoryUI(); listenToChanges(); initCreatures();
+        }).catch(err => {
+          console.error(err); loadFromCookie(); isLoading = false; loadGarden(); updateInventoryUI(); initCreatures();
+        });
+    }
+
+    function listenToChanges() {
+      if (!isFirebaseReady) return;
+      database.ref('garden/plants').on('value', snap => {
+        if (isLoading) return;
+        const data = snap.val();
+        const list = data ? Object.values(data) : [];
+        document.querySelectorAll('.plant-container').forEach(el => {
+          if (!list.find(f => f.id == el.dataset.id)) el.remove();
+        });
+        list.forEach(p => {
+          const ex = document.querySelector(`.plant-container[data-id="${p.id}"]`);
+          if (!ex) renderPlant(p);
+          else {
+             const plEl = ex.querySelector('.plant');
+             if (p.stage === 'flower' && plEl.classList.contains('sprout')) {
+                plEl.textContent = p.type; plEl.classList.remove('sprout'); plEl.classList.add('flower');
+             }
+          }
+        });
+        plants = list; updateStats();
+      });
+      database.ref('garden/stats').on('value', snap => { if(isLoading || !snap.val()) return; stats = snap.val(); updateStats(); });
+      database.ref('garden/inventory').on('value', snap => { if(isLoading || !snap.val()) return; inventory = snap.val(); updateInventoryUI(); });
+    }
+
+    function saveAll() {
+      if(!isFirebaseReady){ saveToCookie(); return; }
+      const updates = {}; plants.forEach(p => updates[`garden/plants/${p.id}`] = p);
+      updates['garden/stats'] = stats; updates['garden/inventory'] = inventory;
+      database.ref().update(updates).catch(() => saveToCookie());
+    }
+    function savePlantsAndStats() {
+      if(!isFirebaseReady){ saveToCookie(); return; }
+      const updates = {}; plants.forEach(p => updates[`garden/plants/${p.id}`] = p);
+      updates['garden/stats'] = stats;
+      database.ref().update(updates).catch(() => saveToCookie());
+    }
+    function saveInventory() {
+      if(!isFirebaseReady){ saveToCookie(); return; }
+      database.ref('garden/inventory').set(inventory).catch(() => saveToCookie());
+    }
+
+    function loadFromCookie() {
+      const cookies = document.cookie.split(';');
+      for(let c of cookies) {
+        const [n, v] = c.trim().split('=');
+        if(n === 'gardenData') {
+          try { const d = JSON.parse(decodeURIComponent(v)); plants = d.plants||[]; stats = d.stats||{totalAdded:0, totalRemoved:0}; inventory = d.inventory||{fish:0,worms:0,apples:0}; return true; } catch(e){}
+        }
+      } return false;
+    }
+    function saveToCookie() {
+      const d = {plants, stats, inventory}; const ex = new Date(); ex.setFullYear(ex.getFullYear()+1);
+      document.cookie = `gardenData=${encodeURIComponent(JSON.stringify(d))}; expires=${ex.toUTCString()}; path=/`;
+    }
+    function deleteCookie(name) { document.cookie = name+'=; Max-Age=-99999999;'; }
+
+    function loadGarden() {
+      document.querySelectorAll('.plant-container').forEach(f => f.remove());
+      plants.forEach(p => renderPlant(p));
+      updateStats();
+    }
+    function updateStats() {
+      document.getElementById('count').textContent = plants.length;
+      document.getElementById('added').textContent = stats.totalAdded;
+      document.getElementById('removed').textContent = stats.totalRemoved;
+    }
+
+    /* =================== LOJA =================== */
+    const SHOP_ITEMS = [
+      { key:'hug', label:'Abraço 🤗' }, { key:'kiss', label:'Algo a sua escolha :)' }, { key:'visit', label:'Visita 👣' },
+      { key:'text', label:'Cartinha 💌' }, { key:'choco', label:'Docinho 🍫' }, { key:'date', label:'Conversar 🩷' },
+    ];
+    const COST = { fish:20, apples:100 };
+
+    function openShop() {
+      const grid = document.getElementById('shopGrid'); grid.innerHTML = '';
+      SHOP_ITEMS.forEach(item => {
+        const div = document.createElement('div'); div.className = 'shop-item';
+        div.innerHTML = `<h4>${item.label}</h4><span class="price-tag">${COST.fish} 🐟 + ${COST.apples} 🍎</span><textarea class="msg-input" placeholder="Mensagem..."></textarea><button class="redeem-btn" onclick="redeemItem('${item.key}', '${item.label}', this)">Resgatar</button>`;
+        grid.appendChild(div);
+      });
+      updateShopButtons(); document.getElementById('shopOverlay').style.display = 'flex';
+    }
+    function closeShop(e) { if (e && e.target && e.target.id !== 'shopOverlay' && e.target.tagName !== 'BUTTON') return; document.getElementById('shopOverlay').style.display = 'none'; }
+    function canAfford() { return inventory.fish >= COST.fish && inventory.apples >= COST.apples; }
+    function updateShopButtons() {
+      const overlay = document.getElementById('shopOverlay'); if(overlay.style.display !== 'flex') return;
+      overlay.querySelectorAll('.redeem-btn').forEach(btn => btn.disabled = !canAfford());
+    }
+    async function redeemItem(key, label, btnEl) {
+      if (!canAfford()) return;
+      const message = btnEl.parentElement.querySelector('textarea').value.trim();
+      inventory.fish -= COST.fish; inventory.apples -= COST.apples;
+      updateInventoryUI(); saveInventory();
+      notifyOwner({ type:'shop_redeem', item:label, message:message, cost:COST, remaining:inventory, when:new Date().toISOString() });
+      if(isFirebaseReady) database.ref('garden/redemptions').push({ key, label, message, cost: COST, ts: Date.now() });
+      btnEl.textContent = 'Sucesso! ✅'; btnEl.disabled = true;
+      setTimeout(() => { btnEl.textContent = 'Resgatar'; updateShopButtons(); }, 2000);
+    }
+
+    function notifyOwner(payload) {
+      if(!NOTIFY_WEBHOOK_URL) return;
+      fetch(NOTIFY_WEBHOOK_URL, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ embeds: [{ title: "🛍️ Resgate na Loja!", color: 0xFF69B4, fields: [
+            { name: "Item", value: payload.item, inline: true },
+            { name: "Custo", value: `${payload.cost.fish}🐟 ${payload.cost.apples}🍎`, inline: true },
+            { name: "Saldo Atual", value: `${payload.remaining.fish}🐟 | ${payload.remaining.apples}🍎 | ${payload.remaining.worms}🪱` },
+            { name: "Mensagem", value: payload.message || "_Nenhuma_" }
+          ], timestamp: payload.when }] })
+      }).catch(e => console.log('Erro webhook', e));
+    }
+
+    /* =================== NOVAS FUNCIONALIDADES =================== */
+    
+    // 1. Ciclo Dia/Noite
+    function initDayNightCycle() {
+        const body = document.body;
+        const celestial = document.getElementById('celestialBody');
+        
+        function checkTime() {
+            const hour = new Date().getHours();
+            const isNight = hour >= 18 || hour < 6;
+            
+            if (isNight) {
+                body.classList.add('night-mode');
+                celestial.classList.remove('sun');
+                celestial.classList.add('moon');
+                createStars(); // Adiciona estrelas
+                createFireflies(); // Adiciona vaga-lumes
+            } else {
+                body.classList.remove('night-mode');
+                celestial.classList.remove('moon');
+                celestial.classList.add('sun');
+                removeNightElements();
+            }
+        }
+        
+        checkTime();
+        // Verifica a cada minuto
+        setInterval(checkTime, 60000);
+    }
+
+    function createStars() {
+        const sky = document.getElementById('skyLayer');
+        if(sky.querySelector('.star')) return; // Já tem estrelas
+        
+        for (let i = 0; i < 30; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3 + 'px';
+            star.style.width = size; star.style.height = size;
+            star.style.top = Math.random() * 60 + '%';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 4 + 's';
+            sky.appendChild(star);
+        }
+    }
+
+    function createFireflies() {
+        const container = document.body;
+        if(container.querySelector('.firefly')) return;
+        
+        for (let i = 0; i < 15; i++) {
+            const fly = document.createElement('div');
+            fly.className = 'firefly';
+            fly.style.top = (40 + Math.random() * 50) + '%';
+            fly.style.left = Math.random() * 100 + '%';
+            fly.style.animationDelay = Math.random() * 5 + 's';
+            fly.style.animationDuration = (10 + Math.random() * 10) + 's, ' + (2 + Math.random() * 2) + 's';
+            container.appendChild(fly);
+        }
+    }
+
+    function removeNightElements() {
+        document.querySelectorAll('.star').forEach(el => el.remove());
+        document.querySelectorAll('.firefly').forEach(el => el.remove());
+    }
+
+    
+    const petCat = document.getElementById('petCat');
+    petCat.addEventListener('click', function(e) {
+        e.stopPropagation();
+        
+        
+        const bubble = document.createElement('div');
+        bubble.textContent = 'Miau! 🐱';
+        bubble.style.position = 'absolute';
+        bubble.style.left = (e.clientX) + 'px';
+        bubble.style.top = (e.clientY - 40) + 'px';
+        bubble.style.background = '#fff';
+        bubble.style.padding = '5px 10px';
+        bubble.style.borderRadius = '15px';
+        bubble.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        bubble.style.fontWeight = 'bold';
+        bubble.style.fontSize = '14px';
+        bubble.style.zIndex = '100';
+        bubble.style.animation = 'floatUp 1s forwards';
+        document.body.appendChild(bubble);
+        setTimeout(() => bubble.remove(), 1000);
+        
+        
+        const heart = document.createElement('div');
+        heart.textContent = '❤️';
+        heart.style.position = 'absolute';
+        heart.style.left = (e.clientX + 20) + 'px';
+        heart.style.top = (e.clientY - 30) + 'px';
+        heart.className = 'drop-msg';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 1000);
+    });
+
+
+    
+    function initCreatures() {
+      setTimeout(createBee, 1000); setInterval(createWorm, 7000); 
+      createApples(); startClouds();
+      setTimeout(createAutoFishJump, 3000);
+      
+      
+      initDayNightCycle();
+    }
+
+    loadFromFirebase();
+  </script>
+</body>
+</html>

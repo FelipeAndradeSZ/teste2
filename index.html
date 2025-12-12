@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para Bea 🌻</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&family=Dancing+Script:wght@400;700&family=Pacifico&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        /* --- ESTILOS GERAIS --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #ff6b9d;
+            --secondary: #c44569;
+            --accent: #feca57;
+            --success: #26de81;
+            --info: #4b7bec;
+            --dark: #2d3436;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ========================================= */
+        /* === NOVA INTRO DA LILLY (CORRIGIDO PARA CELULAR) === */
+        /* ========================================= */
+        #lilly-intro-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            z-index: 200000; /* ACIMA DO BOLO */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: opacity 1.5s ease-out;
+        }
+
+        /* Container dos Slides */
+        .lilly-slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            pointer-events: none;
+            
+            /* Centralização para a imagem da frente */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lilly-slide.active {
+            opacity: 1;
+        }
+
+        /* 1. Imagem de Fundo (Borrada para preencher) */
+        .lilly-bg-blur {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; /* Cobre tudo */
+            filter: blur(20px) brightness(0.4); /* Borra e escurece */
+            z-index: 1;
+            transform: scale(1.1); /* Remove bordas brancas do blur */
+        }
+
+        /* 2. Imagem da Frente (A foto real, sem cortes) */
+        .lilly-fg-img {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            /* Altura máxima para não cobrir o texto ou sair da tela */
+            max-height: 65vh; 
+            object-fit: contain; /* GARANTE QUE A FOTO APAREÇA INTEIRA */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); /* Sombra para destaque */
+            border-radius: 8px;
+            animation: gentleFloat 6s ease-in-out infinite alternate;
+        }
+
+        @keyframes gentleFloat {
+            0% { transform: scale(1) translateY(0); }
+            100% { transform: scale(1.02) translateY(-10px); }
+        }
+
+        /* Texto sobreposto */
+        .lilly-text-container {
+            position: absolute;
+            bottom: 10%; /* Fica na parte de baixo */
+            left: 0; width: 100%;
+            text-align: center;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .lilly-text {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.2rem; /* Tamanho bom para celular */
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeInUpText 1s ease forwards 0.5s;
+            line-height: 1.3;
+        }
+
+        @keyframes fadeInUpText {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Botão de Iniciar a Homenagem */
+        #start-lilly-btn-container {
+            z-index: 200001;
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        #start-lilly-btn {
+            background: linear-gradient(135deg, #ff6b9d, #feca57);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(255, 107, 157, 0.6);
+            animation: pulseBtn 2s infinite;
+            font-family: 'Poppins', sans-serif;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        @keyframes pulseBtn {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(255, 107, 157, 0.8); }
+            100% { transform: scale(1); }
+        }
+
+        /* ========================================= */
+        /* === ESTILOS DA INTRO (BOLO 3D) === */
+        /* ========================================= */
+        #cake-intro-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* Fundo radial original do bolo */
+            background: radial-gradient(circle at center, #ffe4e1 0%, #ffc1c1 100%);
+            z-index: 100000; /* Acima de tudo */
+            transition: opacity 1.5s ease-out;
+            overflow: hidden;
+        }
+
+        #cake-ui {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            text-align: center;
+            z-index: 10;
+        }
+
+        #cake-ui h1 {
+            font-family: 'Dancing Script', cursive;
+            color: #c2185b;
+            font-size: 4.5rem;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.6);
+            animation: floatText 3s ease-in-out infinite;
+        }
+
+        @keyframes floatText {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #cake-ui h2 {
+            color: #000000;
+            background: rgba(238, 119, 82, 0.1);
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 50px;
+            margin-top: 15px;
+            font-size: 1.4rem;
+            font-weight: 100;
+            box-shadow: 0 4px 15px rgba(194, 24, 91, 0.15);
+            animation: pulseText 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseText {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        #cake-instructions {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #c2185b;
+            font-weight: bold;
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* Botão para entrar no site (dentro da intro do bolo) */
+        #enter-site-btn {
+            pointer-events: auto;
+            background: linear-gradient(135deg, #ff6b9d, #ff8c00);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.6);
+            
+            position: absolute;  
+            bottom: -400px;        
+            left: 0;             
+            right: 0;            
+            margin: 0 auto;      
+            width: fit-content;  
+            z-index: 1001;       
+
+            transition: transform 0.3s;
+            font-family: 'Poppins', sans-serif;
+            animation: fadeInUp 1.5s ease 1s forwards;
+            opacity: 0;
+        }
+
+        #enter-site-btn:hover {
+            transform: scale(1.1);
+        }
+ 
+        /* Elementos decorativos do bolo (HTML sobreposto) */
+        .heart-cake {
+            position: absolute;
+            font-size: 2rem;
+            color: #ff1493;
+            animation: heartsCake 8s linear infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes heartsCake {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        .confetti-cake {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes confettiFall {
+            to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* ========================================= */
+        /* === ANIMAÇÃO DE TRANSIÇÃO (CORAÇÃO) === */
+        /* ========================================= */
+        #intro-sequence {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            z-index: 99998; /* Logo abaixo do bolo, mas acima do site */
+            display: none; /* Começa escondido, aparece quando sai o bolo */
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            transition: opacity 1.5s ease-out;
+            overflow: hidden;
+        }
+
+        #heart-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        .final-msg-container {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .final-msg {
+            position: relative;
+            font-family: 'Dancing Script', cursive;
+            font-size: 3rem;
+            color: #feca57;
+            text-shadow: 0 0 15px #ff6b9d;
+            opacity: 0;
+            transition: opacity 2s ease;
+            z-index: 15;
+        }
+        
+        .sun-container-wrapper {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 5; 
+            opacity: 0; transition: opacity 2s ease;
+        }
+        
+        .the-sun {
+            width: 180px; height: 180px; 
+            background: #feca57; border-radius: 50%;
+            box-shadow: 0 0 50px #feca57, 0 0 100px rgba(254, 202, 87, 0.8); 
+            opacity: 0.15;
+        }
+
+        /* ========================================= */
+        /* === ESTILOS DO DASHBOARD (PRINCIPAL) === */
+        /* ========================================= */
+        
+        .player-card { grid-column: span 6; background: linear-gradient(145deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95)); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 280px; padding: 20px; }
+        .player-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .album-cover { width: 110px; height: 110px; border-radius: 50%; border: 4px solid #1db954; box-shadow: 0 0 20px rgba(29, 185, 84, 0.3); object-fit: cover; animation: rotateAlbum 10s linear infinite; animation-play-state: paused; }
+        @keyframes rotateAlbum { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .song-info { text-align: center; }
+        .song-title { color: white; font-size: 1.2rem; font-weight: 700; margin-bottom: 5px; }
+        .artist-name { color: #b3b3b3; font-size: 0.9rem; }
+        .progress-area { width: 100%; height: 6px; background: #535353; border-radius: 50px; cursor: pointer; margin: 5px 0; position: relative; }
+        .progress-bar { height: 100%; width: 0%; background: #1db954; border-radius: 50px; position: relative; }
+        .progress-bar::after { content: ''; position: absolute; right: -5px; top: -4px; width: 14px; height: 14px; background: white; border-radius: 50%; opacity: 0; transition: opacity 0.2s; }
+        .progress-area:hover .progress-bar::after { opacity: 1; }
+        .controls { display: flex; align-items: center; gap: 20px; margin-bottom: 5px; }
+        .control-btn { background: none; border: none; color: #b3b3b3; font-size: 1.1rem; cursor: pointer; transition: color 0.3s; }
+        .control-btn:hover { color: white; }
+        .play-pause-btn { width: 45px; height: 45px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-size: 1.1rem; cursor: pointer; transition: transform 0.2s; }
+        .play-pause-btn:hover { transform: scale(1.1); }
+        .time-stamps { width: 100%; display: flex; justify-content: space-between; font-size: 0.75rem; color: #b3b3b3; }
+        .volume-container { display: flex; align-items: center; justify-content: center; gap: 10px; width: 80%; margin-top: 5px; }
+        .volume-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: #535353; border-radius: 5px; outline: none; opacity: 0.7; transition: opacity .2s; }
+        .volume-slider:hover { opacity: 1; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; background: white; cursor: pointer; border-radius: 50%; }
+        .volume-icon { color: #b3b3b3; font-size: 0.9rem; cursor: pointer; }
+        .volume-icon:hover { color: white; }
+        @media (max-width: 768px) { .player-card { grid-column: span 1; } }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .star { position: absolute; width: 2px; height: 2px; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } }
+        .floating-hearts { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: hidden; }
+        .heart-float { position: absolute; font-size: 20px; animation: floatUp 10s linear infinite; opacity: 0; }
+        @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.7; } 90% { opacity: 0.7; } 100% { transform: translateY(-100px) rotate(360deg); opacity: 0; } }
+        
+        .container { max-width: 1600px; margin: 0 auto; padding: 20px; position: relative; z-index: 3; opacity: 0; transition: opacity 2s ease-in; display: none; }
+        .header { background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 30px; padding: 30px; margin-bottom: 30px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2); position: relative; overflow: hidden; }
+        .header::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent); animation: shine 3s infinite; }
+        @keyframes shine { 0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); } 100% { transform: translateX(100%) translateY(100%) rotate(45deg); } }
+        .header h1 { font-size: 3.5rem; background: linear-gradient(135deg, #fff, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 2px 2px 20px rgba(255, 255, 255, 0.3); margin-bottom: 15px; font-weight: 900; }
+        .status-indicator { display: inline-flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.25); padding: 12px 25px; border-radius: 25px; color: white; font-weight: 700; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+        .status-dot { width: 15px; height: 15px; border-radius: 50%; background: #ccc; animation: pulse 2s infinite; box-shadow: 0 0 10px currentColor; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } }
+        
+        .main-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 25px; margin-bottom: 30px; }
+        .card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 25px; padding: 30px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15); transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); position: relative; overflow: hidden; }
+        .card::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent); transition: 0.5s; }
+        .card:hover::before { left: 100%; }
+        .card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.5); }
+        .card-title { font-size: 1.5rem; color: white; margin-bottom: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); }
+        .card-title i { font-size: 1.8rem; }
+        
+        /* GRID PLACEMENT */
+        .mood-card { grid-column: span 4; }
+        .weather-card { grid-column: span 4; }
+        .counter-card { grid-column: span 4; }
+        .player-card { grid-column: span 6; }
+        .quote-card { grid-column: span 6; }
+        .love-letter-card { grid-column: span 6; }
+        .message-card { grid-column: span 6; }
+        .gallery-card { grid-column: span 8; }
+        .history-card { grid-column: span 4; }
+        .sleep-card { grid-column: span 12; }
+        .garden-card { grid-column: span 4; }
+        .calendar-card { grid-column: span 4; }
+        .game-card { grid-column: span 8; }
+        .store-card { grid-column: span 8; background: linear-gradient(135deg, rgba(255, 223, 186, 0.2), rgba(255, 192, 203, 0.15)); border-color: #ffb7b2; }
+
+        .weather-content {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; text-align: center; color: white;
+        }
+        #temp-display {
+            font-size: 3.5rem; font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            margin-bottom: 10px;
+        }
+        #weather-msg {
+            font-size: 1.1rem; font-weight: 600; color: #feca57;
+        }
+
+        .mood-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .mood-btn { background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1)); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 25px 15px; color: white; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; overflow: hidden; }
+        .mood-btn:hover { transform: scale(1.1) rotate(3deg); box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.6); }
+        .mood-btn i { font-size: 2.5rem; }
+        .counter-display { text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.2)); border-radius: 20px; border: 2px solid rgba(255, 255, 255, 0.4); }
+        .counter-number { font-size: 4rem; font-weight: 900; background: linear-gradient(135deg, #ffd700, #ff8c00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 15px 0; animation: countPulse 2s ease-in-out infinite; }
+        @keyframes countPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .counter-label { font-size: 1.2rem; color: white; font-weight: 600; }
+        .quote-box { text-align: center; padding: 25px; background: linear-gradient(135deg, rgba(147, 51, 234, 0.3), rgba(219, 39, 119, 0.2)); border-radius: 20px; cursor: pointer; transition: all 0.3s ease; border: 2px solid rgba(255, 255, 255, 0.4); min-height: 180px; display: flex; flex-direction: column; justify-content: center; }
+        .quote-box:hover { transform: scale(1.05); }
+        .quote-text { font-family: 'Pacifico', cursive; font-size: 1.3rem; color: white; min-height: 60px; }
+        .love-letter { background: linear-gradient(135deg, rgba(255, 105, 180, 0.4), rgba(255, 20, 147, 0.3)); border: 2px solid rgba(255, 255, 255, 0.4); padding: 30px; border-radius: 20px; cursor: pointer; transition: all 0.4s ease; text-align: center; min-height: 200px; display: flex; flex-direction: column; justify-content: center; }
+        .love-letter:hover { transform: scale(1.05); box-shadow: 0 20px 50px rgba(255, 105, 180, 0.5); }
+        .love-preview { font-family: 'Dancing Script', cursive; font-size: 1.4rem; color: white; }
+        .message-input { width: 100%; background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 15px; padding: 18px; color: white; font-family: 'Poppins', sans-serif; font-size: 1rem; resize: vertical; min-height: 120px; margin-bottom: 15px; }
+        .send-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 15px; padding: 18px 30px; color: white; font-weight: 700; cursor: pointer; width: 100%; font-size: 1.1rem; transition: all 0.3s ease; }
+        .send-btn:hover { transform: translateY(-3px); }
+        .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 100%; }
+        .gallery-item { aspect-ratio: 1 / 1; background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)); border: 3px solid rgba(255, 255, 255, 0.5); border-radius: 20px; position: relative; overflow: hidden; cursor: pointer; transition: all 0.4s; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        .gallery-item:hover { transform: scale(1.05) rotate(3deg); border-color: #fff; z-index: 2; }
+        .garden-btn { width: 100%; min-height: 200px; background: linear-gradient(135deg, #11998e, #38ef7d); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 20px; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; text-decoration: none; transition: all 0.4s; }
+        .garden-btn:hover { transform: translateY(-5px) scale(1.02); }
+        .calendar-list { list-style: none; padding: 0; max-height: 250px; overflow-y: auto; }
+        .calendar-item { display: flex; align-items: center; gap: 15px; background: rgba(255, 255, 255, 0.1); padding: 12px; margin-bottom: 10px; border-radius: 12px; color: white; border-left: 3px solid #feca57; transition: transform 0.2s; }
+        .calendar-item:hover { background: rgba(255, 255, 255, 0.2); transform: translateX(5px); }
+        .date-badge { background: white; color: #c44569; padding: 5px 10px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; min-width: 60px; text-align: center; }
+        .game-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
+        .game-cell { aspect-ratio: 1/1; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 15px; font-size: 3rem; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; font-weight: 900; transition: all 0.3s; }
+        .game-cell:hover { background: rgba(255, 255, 255, 0.4); }
+        .game-cell.x { color: #feca57; text-shadow: 0 0 10px rgba(254, 202, 87, 0.5); }
+        .game-cell.o { color: #26de81; text-shadow: 0 0 10px rgba(38, 222, 129, 0.5); }
+        .game-controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .team-btn { background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255,255,255,0.3); padding: 10px 20px; color: white; border-radius: 20px; cursor: pointer; transition: all 0.3s; }
+        .team-btn.selected { background: white; color: #2d3436; font-weight: 800; box-shadow: 0 5px 15px rgba(255,255,255,0.3); }
+        .game-btn { background: linear-gradient(135deg, #667eea, #764ba2); border: none; padding: 10px 25px; color: white; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .turn-indicator { text-align: center; margin: 15px 0; font-size: 1.2rem; color: white; font-weight: 600; }
+        .sleep-button { background: linear-gradient(135deg, rgba(46, 49, 146, 0.4), rgba(27, 20, 100, 0.3)); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 25px 40px; color: white; font-size: 1.3rem; font-weight: 700; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px); }
+        .modal.active { display: flex; }
+        .modal-content { background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1)); backdrop-filter: blur(30px); border: 3px solid rgba(255, 255, 255, 0.4); border-radius: 35px; padding: 50px; max-width: 700px; width: 90%; color: white; text-align: center; max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-close { background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 20px; padding: 15px 40px; color: white; font-weight: 700; cursor: pointer; margin-top: 25px; }
+
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .store-item {
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .store-item:hover {
+            transform: scale(1.05);
+        }
+        .store-item.selected {
+            background: white;
+            color: #d63031;
+            border-color: #ff6b9d;
+            box-shadow: 0 0 15px rgba(255, 107, 157, 0.5);
+            transform: scale(1.05);
+        }
+
+        .store-item i { font-size: 2rem; margin-bottom: 5px; }
+        .store-item span { font-size: 0.9rem; font-weight: bold; }
+        .custom-wish {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid { grid-template-columns: repeat(8, 1fr); }
+            .mood-card, .weather-card, .counter-card, .calendar-card { grid-column: span 4; }
+            .player-card, .quote-card, .love-letter-card, .message-card { grid-column: span 8; }
+            .gallery-card, .game-card, .store-card { grid-column: span 8; }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .main-grid { grid-template-columns: 1fr; gap: 20px; }
+            .mood-card, .weather-card, .counter-card, .player-card, .quote-card, .love-letter-card, .message-card,
+            .gallery-card, .history-card, .sleep-card, .garden-card, .calendar-card, .game-card, .store-card { grid-column: span 1; }
+            .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+            .mood-grid { grid-template-columns: 1fr; }
+            
+            #cake-ui h1 { font-size: 3rem; }
+            .lilly-text { font-size: 1.8rem; } /* Texto um pouco menor no mobile */
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="lilly-intro-layer">
+        
+        <div id="start-lilly-btn-container">
+            <h1 style="color:white; font-family:'Dancing Script'; font-size:3rem; margin-bottom:10px;">Surpresa pra você! 🐾</h1>
+            <p style="color:#eee;">Aumente o som...</p>
+            <button id="start-lilly-btn" onclick="iniciarHomenagemLilly()">
+                <i class="fas fa-play"></i> Ver Mensagem Especial
+            </button>
+        </div>
+
+        <div id="lilly-slides-container" style="width:100%; height:100%; position:absolute; top:0; left:0;">
+            </div>
+
+    </div>
+
+    <div id="cake-intro-container">
+        <div id="cake-ui">
+            <h1>Parabéns pela sua dedicação, Amor!</h1>
+            <h2>Agora aproveite e descanse um pouco por favor! Eu te Amo ❤️</h2>
+            <br>
+            <button id="enter-site-btn" onclick="finalizarIntroBolo()">Entrar no site ✨</button>
+        </div>
+
+        <div id="cake-instructions">✨ Pinçar o dedo move a tela, passar o dedo move o angulo de visao, veja as fotinhas! ✨</div>
+    </div>
+
+    <div id="intro-sequence">
+        <canvas id="heart-canvas"></canvas>
+        <div class="final-msg-container" id="finalMsgContainer">
+            <div class="final-msg" id="finalMsg">
+                Para sempre você, meu solzinho ☀️
+            </div>
+            <div class="sun-container-wrapper" id="sunWrapper">
+                <div class="the-sun"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="stars" id="stars"></div>
+    <div class="floating-hearts" id="floatingHearts"></div>
+
+    <div class="container" id="mainContainer">
+        <div class="header">
+            <h1>💖 Para meu Solzinho ☀️</h1>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Conectando...</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="card mood-card">
+                <div class="card-title">
+                    <i class="fas fa-heart"></i>
+                    Como você está?
+                </div>
+                <div class="mood-grid">
+                    <button class="mood-btn" onclick="enviarHumor('verde', '😊')">
+                        <i class="fas fa-smile-beam"></i>
+                        <span>Feliz</span>
+                    </button>
+                    <button class="mood-btn" onclick="enviarHumor('amarelo', '💼')">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Ocupada</span>
+                    </button>
+                    <button class="mood-btn" onclick="enviarHumor('vermelho', '😔')">
+                        <i class="fas fa-cloud-rain"></i>
+                        <span>Triste</span>
+                    </button>
+                    <button class="mood-btn" onclick="enviarHumor('coracao', '🫂')">
+                        <i class="fa-solid fa-heart-circle-bolt"></i>
+                        <span>Abraço</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card weather-card">
+                <div class="card-title">
+                    <i class="fas fa-cloud-sun"></i>
+                    Ribeirão Preto ☀️
+                </div>
+                <div class="weather-content">
+                    <div id="temp-display">--°C</div>
+                    <div id="weather-msg">Carregando clima...</div>
+                </div>
+            </div>
+
+            <div class="card counter-card">
+                <div class="card-title">
+                    <i class="fas fa-calendar-heart"></i>
+                    Felicidade há
+                </div>
+                <div class="counter-display">
+                    <i class="fas fa-infinity" style="font-size: 2rem; color: white;"></i>
+                    <div class="counter-number" id="daysCounter">0</div>
+                    <div class="counter-label"> ☀️ Dias ☀️</div>
+                </div>
+            </div>
+
+            <div class="card player-card">
+                <div class="card-title" style="align-self: flex-start; width:100%; display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span><i class="fas fa-music"></i> Música do Dia 🎵</span>
+                </div>
+                
+                <div class="player-wrapper">
+                    <img src="lastfn.jfif" alt="Album Art" class="album-cover" id="albumCover">
+                    
+                    <div class="song-info">
+                        <div class="song-title" id="songTitle">Last Friday Night</div>
+                        <div class="artist-name" id="artistName">Ketty Perry</div>
+                    </div>
+
+                    <div class="progress-area" id="progressArea">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    
+                    <div class="time-stamps">
+                        <span id="currentTime">0:00</span>
+                        <span id="duration">0:00</span>
+                    </div>
+
+                    <div class="controls">
+                        <button class="control-btn"><i class="fas fa-backward"></i></button>
+                        <button class="play-pause-btn" onclick="togglePlay()">
+                            <i class="fas fa-play" id="playIcon"></i>
+                        </button>
+                        <button class="control-btn"><i class="fas fa-forward"></i></button>
+                    </div>
+
+                    <div class="volume-container">
+                        <i class="fas fa-volume-down volume-icon" onclick="mudarVolume(-10)"></i>
+                        <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider" oninput="setVolume(this.value)">
+                        <i class="fas fa-volume-up volume-icon" onclick="mudarVolume(10)"></i>
+                    </div>
+                </div>
+                
+                <audio id="audioPlayer" src="lastf.mp3"></audio>
+            </div>
+
+            <div class="card store-card">
+                <div class="card-title">
+                    <i class="fas fa-store"></i>
+                    Lojinha de Mimos 🎁
+                </div>
+                <div style="text-align: center; color: white;">
+                    <p style="margin-bottom: 15px;">Você merece ser muito mimada sempre!</p>
+                    <button class="send-btn" onclick="abrirLojinha()" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: #555;">
+                        <i class="fas fa-gift"></i> Ver Prêmios Disponíveis
+                    </button>
+                </div>
+            </div>
+
+            <div class="card quote-card">
+                <div class="card-title">
+                    <i class="fas fa-sparkles"></i>
+                    Mensagem Especial
+                </div>
+                <div class="quote-box" onclick="gerarFrase()">
+                    <div class="quote-icon">✨</div>
+                    <div class="quote-text" id="quoteText">Clique para uma mensagem</div>
+                </div>
+            </div>
+
+            <div class="card love-letter-card">
+                <div class="card-title">
+                    <i class="fas fa-envelope-heart"></i>
+                    Carta para Você
+                </div>
+                <div class="love-letter" onclick="abrirCarta()">
+                    <i class="fa-solid fa-envelope"></i>
+                    <div class="love-preview">
+                        Clique aqui para ler uma mensagem especial do meu coração 💕<br>
+                        Cartinha feita no dia 12/12/25
+                    </div>
+                </div>
+            </div>
+
+            <div class="card message-card">
+                <div class="card-title">
+                    <i class="fas fa-comment-dots"></i>
+                    Enviar Recadinho
+                </div>
+                <textarea class="message-input" id="mensagemCustom" placeholder="Escreva uma mensagem carinhosa para enviar..."></textarea>
+                <button class="send-btn" onclick="enviarMensagem()">
+                    <i class="fas fa-paper-plane"></i> Enviar com Amor
+                </button>
+            </div>
+        
+            <div class="card gallery-card">
+                <div class="card-title">
+                    <i class="fas fa-images"></i>
+                    Nossas Memórias 📸
+                </div>
+                
+                <div class="gallery-grid">
+                    <div class="gallery-item" onclick="abrirMemoria('foto4.jpg', '07/12/2025', 'O dia que fomos comer pizza juntinhos! ✨')">
+                        <img src="foto4.jpg" alt="Foto 4">
+                    </div>
+
+                    <div class="gallery-item" onclick="abrirMemoria('flor.jpeg', '10/12/2025', 'Um dos dias mais felizes da minha vida, saber que gostou da surpresa que te fiz, me faz o homem mais feliz do mundo!')">
+                        <img src="flor.jpeg" alt="Foto 4">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card garden-card">
+                <div class="card-title">
+                    <i class="fas fa-leaf"></i>
+                    Nosso Jardim 🌷
+                </div>
+                
+                <a href="jardim.html" class="garden-btn">
+                    <i class="fas fa-tree" style="font-size: 3.5rem;"></i>
+                    <span style="font-size: 1.4rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        Ir para o Jardim
+                    </span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">Regar nossas flores 💦</span>
+                </a>
+            </div>
+
+            <div class="card calendar-card">
+                <div class="card-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Datas Importantes
+                </div>
+                <ul class="calendar-list">
+                    <li class="calendar-item">
+                        <span class="date-badge">30/11/25</span>
+                        <span>Nosso Início 💖</span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">15/12/25</span>
+                        <span>Viagem para Holambra 🎄</span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">07/03/26</span>
+                        <span>Aniversário felipe </span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">20/05/26</span>
+                        <span>Aniversário da minha princesa 🥳</span>
+                    </li>
+                    <li class="calendar-item">
+                        <span class="date-badge">12/06/26</span>
+                        <span>Dia dos Namorados 🎁</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card game-card">
+                <div class="card-title">
+                    <i class="fas fa-gamepad"></i>
+                    Jogo da Velha (Online)
+                </div>
+                
+                <div class="turn-indicator">
+                    Vez de: <span id="turnDisplay" style="color: #feca57;">X</span>
+                </div>
+
+                <div class="game-board" id="gameBoard">
+                    <div class="game-cell" onclick="jogar(0)"></div>
+                    <div class="game-cell" onclick="jogar(1)"></div>
+                    <div class="game-cell" onclick="jogar(2)"></div>
+                    <div class="game-cell" onclick="jogar(3)"></div>
+                    <div class="game-cell" onclick="jogar(4)"></div>
+                    <div class="game-cell" onclick="jogar(5)"></div>
+                    <div class="game-cell" onclick="jogar(6)"></div>
+                    <div class="game-cell" onclick="jogar(7)"></div>
+                    <div class="game-cell" onclick="jogar(8)"></div>
+                </div>
+                
+                <div class="game-controls">
+                    <button id="btnX" class="team-btn selected" onclick="escolherLado('X')">Sou X</button>
+                    <button id="btnO" class="team-btn" onclick="escolherLado('O')">Sou Bola</button>
+                    <button class="game-btn" onclick="resetGame()">Reiniciar</button>
+                </div>
+                <div style="text-align:center; color:white; margin-top:10px; font-size:0.9rem; opacity:0.8;">
+                    Escolha qual vc quer ser meu bem! ⚠️
+                </div>
+            </div>
+
+            <div class="card sleep-card">
+                <button class="sleep-button" onclick="enviarHumor('desligar', '🌙')">
+                    <i class="fas fa-moon"></i>
+                    <span>Desligar Luz / Boa Noite 🌙</span>
+                    <i class="fas fa-bed"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modalContent">
+            <div id="modalBody"></div>
+            <button class="modal-close" onclick="fecharModal()">Fechar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- Variáveis Globais do Three.js para controle ---
+        let scene, camera, renderer, animationId;
+        
+        // --- AS FOTOS ---
+        const minhasFotosURLs = [
+            'corac.jpeg', 
+            'flor.jpeg',
+            'foto4.jpeg',
+            'lilly.jpeg'
+        ];
+
+        // --- EFEITOS HTML (CONFETE E CORAÇÃO) ---
+        function createHeart() {
+            const container = document.getElementById('cake-intro-container');
+            if (!container || container.style.opacity === '0') return;
+
+            const heart = document.createElement('div');
+            heart.className = 'heart-cake';
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + '%';
+            heart.style.animationDuration = (Math.random() * 3 + 5) + 's';
+            heart.style.animationDelay = Math.random() * 2 + 's';
+            container.appendChild(heart);
+            setTimeout(() => heart.remove(), 10000);
+        }
+
+        function createConfetti() {
+            const container = document.getElementById('cake-intro-container');
+            if (!container || container.style.opacity === '0') return;
+
+            const colors = ['#ff6b9d', '#ffd93d', '#6bcf7f', '#4d9de0', '#e15554', '#f1c40f'];
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti-cake';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animation = `confettiFall ${Math.random() * 3 + 2}s linear`;
+            container.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 5000);
+        }
+        
+        // Intervalos de efeitos
+        let heartInterval = setInterval(createHeart, 800);
+        let confettiInterval = setInterval(createConfetti, 200);
+
+        // --- CENA THREE.JS ---
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xffc1c1, 60, 300);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 50, 80);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+            
+            // Adiciona o renderer ao container específico da intro
+            const container = document.getElementById('cake-intro-container');
+            if (container) {
+                container.appendChild(renderer.domElement);
+            }
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05;
+            controls.minDistance = 30;
+            controls.maxDistance = 120;
+
+            const ambientLight = new THREE.AmbientLight(0xffe4e1, 0.5);
+            scene.add(ambientLight);
+
+            const mainLight = new THREE.DirectionalLight(0xffedd5, 1);
+            mainLight.position.set(30, 50, 30);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+
+            // Luz da vela
+            const candleLight = new THREE.PointLight(0xff6600, 1.5, 15, 2);
+            candleLight.position.set(0, 13.5, 0);
+            scene.add(candleLight);
+
+            // --- MATERIAIS E OBJETOS (Mesa, Bolo, Cadeiras, Fotos) ---
+            const matWood = new THREE.MeshStandardMaterial({ color: 0xb8956a, roughness: 0.8 });
+            const matFloor = new THREE.MeshStandardMaterial({ color: 0xffd1dc, roughness: 0.9 });
+            const matCakeChoco = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.4, metalness: 0.1 });
+            const matCakeWhite = new THREE.MeshStandardMaterial({ color: 0xfff8f0, roughness: 0.2 });
+            const matFrosting = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15, emissive: 0xffeeff, emissiveIntensity: 0.2 });
+            const matPlate = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, metalness: 0.4 });
+            const matCandleWax = new THREE.MeshStandardMaterial({ color: 0xfff8dc, roughness: 0.6, emissive: 0xffeecc, emissiveIntensity: 0.1 });
+
+            // Chão
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), matFloor);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -10;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Mesa
+            const tableGroup = new THREE.Group();
+            const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 1.5, 128), matWood);
+            tableTop.position.y = -0.75;
+            tableTop.receiveShadow = true;
+            tableTop.castShadow = true;
+            const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 9, 64), matWood);
+            tableLeg.position.y = -5.5;
+            tableLeg.castShadow = true;
+            tableLeg.receiveShadow = true;
+            const tableBase = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 2, 128), matWood);
+            tableBase.position.y = -10;
+            tableBase.receiveShadow = true;
+            tableBase.castShadow = true;
+            tableGroup.add(tableTop, tableLeg, tableBase);
+            scene.add(tableGroup);
+
+            // Cadeiras
+            function createChair(x, z) {
+                const chairGroup = new THREE.Group();
+                const seat = new THREE.Mesh(new THREE.BoxGeometry(6, 1, 6), matWood);
+                seat.position.y = -3.5;
+                seat.castShadow = true;
+                seat.receiveShadow = true;
+                chairGroup.add(seat);
+                const legGeo = new THREE.BoxGeometry(1, 7, 1);
+                [{x: 2.5, z: 2.5}, {x: -2.5, z: 2.5}, {x: 2.5, z: -2.5}, {x: -2.5, z: -2.5}].forEach(pos => {
+                    const leg = new THREE.Mesh(legGeo, matWood);
+                    leg.position.set(pos.x, -7, pos.z);
+                    leg.castShadow = true;
+                    chairGroup.add(leg);
+                });
+                const back = new THREE.Mesh(new THREE.BoxGeometry(6, 8, 1), matWood);
+                back.position.set(0, 0.5, -2.5);
+                back.castShadow = true;
+                chairGroup.add(back);
+                chairGroup.position.set(x, 0, z);
+                chairGroup.lookAt(0, 0, 0);
+                scene.add(chairGroup);
+            }
+            createChair(0, 20); createChair(0, -20); createChair(20, 0); createChair(-20, 0);
+
+            // Bolo Group
+            const cakeGroup = new THREE.Group();
+            const plateMesh = new THREE.Mesh(new THREE.CylinderGeometry(10, 9.5, 0.8, 128), matPlate);
+            plateMesh.receiveShadow = true;
+            const plateRim = new THREE.Mesh(new THREE.TorusGeometry(9.7, 0.3, 32, 100), matPlate);
+            plateRim.rotation.x = Math.PI/2;
+            plateRim.position.y = 0.4;
+            cakeGroup.add(plateMesh, plateRim);
+
+            const layer1 = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 7.5, 5, 128), matCakeChoco);
+            layer1.position.y = 3;
+            layer1.castShadow = true;
+            cakeGroup.add(layer1);
+
+            for(let i = 0; i < 16; i++) {
+                const angle = (i / 16) * Math.PI * 2;
+                const swirl = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), matFrosting);
+                swirl.position.set(Math.cos(angle) * 7.5, 5.5, Math.sin(angle) * 7.5);
+                swirl.castShadow = true;
+                cakeGroup.add(swirl);
+            }
+
+            const frostingRim = new THREE.Mesh(new THREE.TorusGeometry(6, 0.7, 32, 100), matFrosting);
+            frostingRim.rotation.x = Math.PI/2;
+            frostingRim.position.y = 5.5;
+            cakeGroup.add(frostingRim);
+
+            const layer2 = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 4, 128), matCakeWhite);
+            layer2.position.y = 7.5;
+            layer2.castShadow = true;
+            cakeGroup.add(layer2);
+
+            for(let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const wave = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), matFrosting);
+                wave.position.set(Math.cos(angle) * 5.5, 9.5, Math.sin(angle) * 5.5);
+                wave.castShadow = true;
+                cakeGroup.add(wave);
+            }
+
+            // Vela
+            const candleBody = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 3.5, 32), matCandleWax);
+            candleBody.position.y = 11;
+            candleBody.castShadow = true;
+            cakeGroup.add(candleBody);
+            const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+            wick.position.y = 12.85;
+            cakeGroup.add(wick);
+            
+            // Chama
+            const flameOuter = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.8 }));
+            flameOuter.scale.set(1, 1.4, 1);
+            flameOuter.position.y = 13.4;
+            cakeGroup.add(flameOuter);
+            const flameInner = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.9 }));
+            flameInner.scale.set(1, 1.5, 1);
+            flameInner.position.y = 13.5;
+            cakeGroup.add(flameInner);
+
+            // Sprinkles
+            function createSprinkles() {
+                const sprinkleGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.4, 4);
+                const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00];
+                for(let i=0; i<50; i++) {
+                    const mat = new THREE.MeshStandardMaterial({ color: colors[i%4] });
+                    const mesh = new THREE.Mesh(sprinkleGeo, mat);
+                    const angle = Math.random() * Math.PI * 2;
+                    const r = Math.random() * 5;
+                    mesh.position.set(Math.cos(angle)*r, 9.6, Math.sin(angle)*r);
+                    mesh.rotation.x = Math.PI/2;
+                    mesh.rotation.z = Math.random() * Math.PI;
+                    cakeGroup.add(mesh);
+                }
+            }
+            createSprinkles();
+
+            // Cerejas
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2 + 0.2;
+                const cherry = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ color: 0xc41e3a, roughness: 0.2, metalness: 0.3 }));
+                cherry.position.set(Math.cos(angle) * 7, 5.8, Math.sin(angle) * 7);
+                cherry.castShadow = true;
+                cakeGroup.add(cherry);
+            }
+            cakeGroup.position.y = 0.4;
+            scene.add(cakeGroup);
+
+            // --- CARREGAMENTO FOTOS ---
+            const matPhotoPaper = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.1 });
+            const photoRadius = 12;
+            const manager = new THREE.LoadingManager();
+            manager.onError = function (url) { console.error('Erro ao carregar ' + url); };
+            const loader = new THREE.TextureLoader(manager);
+
+            minhasFotosURLs.forEach((url, index) => {
+                loader.load(url, (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    const photoGroup = new THREE.Group();
+                    const frame = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.12, 4.4), matPhotoPaper);
+                    frame.castShadow = true;
+                    frame.receiveShadow = true;
+                    photoGroup.add(frame);
+                    const pic = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: texture }));
+                    pic.rotation.x = -Math.PI / 2;
+                    pic.position.set(0, 0.07, -0.3);
+                    photoGroup.add(pic);
+                    const angle = (index / minhasFotosURLs.length) * Math.PI * 2;
+                    photoGroup.position.set(Math.cos(angle) * photoRadius, 0.1, Math.sin(angle) * photoRadius);
+                    photoGroup.rotation.y = angle + Math.PI;
+                    scene.add(photoGroup);
+                });
+            });
+
+            // Estrelas
+            const starParticles = [];
+            const starGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            for(let i = 0; i < 50; i++) {
+                const star = new THREE.Mesh(starGeometry, starMaterial);
+                star.position.set((Math.random() - 0.5) * 60, Math.random() * 40 + 10, (Math.random() - 0.5) * 60);
+                star.userData.speed = Math.random() * 0.02 + 0.01;
+                starParticles.push(star);
+                scene.add(star);
+            }
+
+            // Presentes
+            function createGift(x, z, color, size) {
+                const group = new THREE.Group();
+                const boxGeo = new THREE.BoxGeometry(size, size, size);
+                const boxMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+                const box = new THREE.Mesh(boxGeo, boxMat);
+                box.position.y = size / 2;
+                box.castShadow = true;
+                group.add(box);
+                const ribV = new THREE.Mesh(new THREE.BoxGeometry(size * 1.05, size * 1.05, size * 0.15), new THREE.MeshStandardMaterial({ color: 0xff3366 }));
+                ribV.position.y = size/2;
+                group.add(ribV);
+                const ribH = new THREE.Mesh(new THREE.BoxGeometry(size * 0.15, size * 1.05, size * 1.05), new THREE.MeshStandardMaterial({ color: 0xff3366 }));
+                ribH.position.y = size/2;
+                group.add(ribH);
+                group.position.set(x, -10, z);
+                group.rotation.y = Math.random();
+                scene.add(group);
+            }
+            createGift(15, 15, 0xff8fa3, 4); createGift(18, 14, 0x80deea, 3); createGift(-15, 15, 0xfff59d, 3.5);
+            createGift(-16, -16, 0xb39ddb, 4); createGift(15, -15, 0xff8fa3, 2.5); createGift(-14, 18, 0x80deea, 2);
+
+            // Balões
+            const balloonMatBase = new THREE.MeshPhysicalMaterial({ roughness: 0.2, transmission: 0.95, thickness: 1.5, clearcoat: 1, side: THREE.DoubleSide });
+            function createBalloon(x, z, color, h) {
+                const group = new THREE.Group();
+                const mat = balloonMatBase.clone();
+                mat.color.setHex(color);
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(2.5, 64, 64), mat);
+                mesh.castShadow = true;
+                const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0,-2.5,0), new THREE.Vector3(1,-10,0), new THREE.Vector3(0,-22,0)]), 20, 0.08, 8, false), new THREE.MeshStandardMaterial({color: 0xffffff}));
+                group.add(mesh, line);
+                group.position.set(x, h, z);
+                group.userData = { speed: 0.001 + Math.random()*0.003, offset: Math.random()*10, baseY: h };
+                scene.add(group);
+            }
+            createBalloon(-22, -22, 0xff4081, 20); createBalloon(22, -18, 0x00bcd4, 18); createBalloon(-18, 25, 0xffeb3b, 22);
+            createBalloon(20, 20, 0xff5722, 19); createBalloon(-15, -15, 0x9c27b0, 21); createBalloon(15, -20, 0x4caf50, 23);
+
+            // Fogos
+            const fireworksParticles = [];
+            let activeFireworks = [];
+            
+            class Firework {
+                constructor() {
+                    this.particles = [];
+                    this.color = new THREE.Color().setHSL(Math.random(), 1, 0.6);
+                    this.x = (Math.random() - 0.5) * 50;
+                    this.z = (Math.random() - 0.5) * 50;
+                    this.targetY = 35 + Math.random() * 20; 
+                    
+                    const particleCount = 300;
+                    for(let i = 0; i < particleCount; i++) {
+                        const particle = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.7, 8, 8), 
+                            new THREE.MeshBasicMaterial({ color: this.color })
+                        );
+                        const speed = Math.random() * 1.5 + 0.5;
+                        const angle1 = Math.random() * Math.PI * 2;
+                        const angle2 = Math.random() * Math.PI;
+                        
+                        particle.position.set(this.x, this.targetY, this.z);
+                        particle.userData = { 
+                            velocity: new THREE.Vector3(
+                                Math.sin(angle1) * Math.cos(angle2) * speed, 
+                                Math.sin(angle2) * speed, 
+                                Math.cos(angle1) * Math.cos(angle2) * speed
+                            ), 
+                            life: 1.0, 
+                            gravity: 0.01 
+                        };
+                        scene.add(particle);
+                        this.particles.push(particle);
+                    }
+                }
+                update() {
+                    let allDead = true;
+                    this.particles.forEach(particle => {
+                        if(particle.userData.life > 0) {
+                            allDead = false;
+                            particle.position.add(particle.userData.velocity);
+                            particle.userData.velocity.y -= particle.userData.gravity;
+                            particle.userData.life -= 0.015;
+                            particle.scale.setScalar(particle.userData.life);
+                        } else {
+                            particle.position.y = -1000;
+                        }
+                    });
+                    return allDead;
+                }
+                destroy() {
+                    this.particles.forEach(particle => {
+                        particle.geometry.dispose();
+                        particle.material.dispose();
+                        scene.remove(particle);
+                    });
+                }
+            }
+
+            function launchFirework() { 
+                // Só lança fogos se a intro estiver visível
+                if(document.getElementById('cake-intro-container').style.display === 'none') return;
+                
+                const firework = new Firework(); 
+                activeFireworks.push(firework); 
+                fireworksParticles.push(firework); 
+            }
+            
+            let fireworkInterval = setInterval(() => { if(Math.random() > 0.3) { launchFirework(); } }, 1200);
+
+            // Animação Loop
+            const clock = new THREE.Clock();
+            
+            function animate() {
+                // Checa se ainda precisamos animar (performance)
+                const container = document.getElementById('cake-intro-container');
+                if (container && container.style.display === 'none') return;
+
+                requestAnimationFrame(animate);
+                const time = clock.getElapsedTime();
+                controls.update();
+
+                // Chama da vela
+                const flicker = 1 + Math.sin(time * 20) * 0.08 + Math.cos(time * 35) * 0.06;
+                flameOuter.scale.set(flicker, flicker * 1.4, flicker);
+                flameInner.scale.set(flicker * 0.8, flicker * 1.5, flicker * 0.8);
+                candleLight.intensity = 1.5 + Math.sin(time * 30) * 0.4;
+                candleLight.position.x = Math.sin(time * 15) * 0.15;
+                candleLight.position.z = Math.cos(time * 12) * 0.15;
+
+                // Rotação do bolo
+                cakeGroup.rotation.y = time * 0.1;
+
+                // Balões
+                scene.children.forEach(child => {
+                    if(child.userData.speed) {
+                        child.position.y = child.userData.baseY + Math.sin(time * child.userData.speed + child.userData.offset) * 2;
+                        child.rotation.z = Math.sin(time * child.userData.speed * 0.5) * 0.1;
+                    }
+                });
+
+                // Estrelas
+                starParticles.forEach(star => {
+                    star.position.y += star.userData.speed;
+                    star.rotation.y += 0.02;
+                    if(star.position.y > 60) { star.position.y = 10; }
+                });
+
+                // Fogos
+                activeFireworks = activeFireworks.filter(firework => {
+                    const isDead = firework.update();
+                    if(isDead) { firework.destroy(); return false; }
+                    return true;
+                });
+
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            // Resize handler
+            window.addEventListener('resize', () => { 
+                camera.aspect = window.innerWidth / window.innerHeight; 
+                camera.updateProjectionMatrix(); 
+                renderer.setSize(window.innerWidth, window.innerHeight); 
+            });
+
+            // Expor função de limpar recursos para quando fechar a intro
+            window.cleanUpThreeJS = function() {
+                clearInterval(fireworkInterval);
+                clearInterval(heartInterval);
+                clearInterval(confettiInterval);
+            }
+        }
+
+        initThreeJS();
+    </script>
+
+    <script>
+        // --- 0. LÓGICA DA NOVA INTRO LILLY ---
+        const lillySlidesData = [
+            { img: 'lilly2.png', text: 'Oi Mamãe! Sou eu, a Lilly! 🐶' },
+            { img: 'lilly8.png', text: 'Lembro perfeitamente dos dias que passavamos juntas com vc a estudar... 📚' },
+            { img: 'lilly3.png', text: 'Sei que estamos longe mas me contaram que você continua estudando tanto ultimamente... 📚' },
+            { img: 'lily4.png', text: 'Saiba que independente do resultado você é meu orgulho e sempre será! 🌟' },
+            { img: 'lilly5.png', text: 'Te amarei eternamente mamãe, obrigado por tudo! ❤️' },
+            { img: 'lilly6.png', text: 'Assim como eu superei momentos dificeis, você tambem sempre supera os desafios dificeis... 🥰' },
+            { img: 'lilly7.png', text: 'Estou com muita saudades de você mamãe, venha me visitar logo!!!' }
+        ];
+
+        function iniciarHomenagemLilly() {
+            // Tenta dar play na música (interação do usuário permite isso)
+            const audio = document.getElementById('audioPlayer');
+            if (audio) {
+                audio.play().catch(e => console.log("Audio play blocked", e));
+                document.getElementById('playIcon').classList.remove('fa-play');
+                document.getElementById('playIcon').classList.add('fa-pause');
+                document.getElementById('albumCover').style.animationPlayState = 'running';
+            }
+
+            // Esconde botão inicial
+            document.getElementById('start-lilly-btn-container').style.display = 'none';
+
+            // Inicia Slideshow
+            const container = document.getElementById('lilly-slides-container');
+            let slideIndex = 0;
+
+            function showSlide() {
+                if (slideIndex >= lillySlidesData.length) {
+                    // Fim da intro Lilly -> Vai para o Bolo
+                    setTimeout(() => {
+                        document.getElementById('lilly-intro-layer').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('lilly-intro-layer').style.display = 'none';
+                        }, 1500);
+                    }, 2000);
+                    return;
+                }
+
+                // Cria Slide
+                const data = lillySlidesData[slideIndex];
+                
+                // Div do Slide
+                const slideDiv = document.createElement('div');
+                slideDiv.className = 'lilly-slide active';
+                
+                // 1. Imagem de Fundo (Borrada)
+                const bgImg = document.createElement('img');
+                bgImg.src = data.img;
+                bgImg.className = 'lilly-bg-blur';
+                slideDiv.appendChild(bgImg);
+
+                // 2. Imagem da Frente (Normal)
+                const fgImg = document.createElement('img');
+                fgImg.src = data.img;
+                fgImg.className = 'lilly-fg-img';
+                slideDiv.appendChild(fgImg);
+                
+                // Texto
+                const textContainer = document.createElement('div');
+                textContainer.className = 'lilly-text-container';
+                const p = document.createElement('p');
+                p.className = 'lilly-text';
+                p.innerText = data.text;
+                textContainer.appendChild(p);
+
+                slideDiv.appendChild(textContainer);
+                container.appendChild(slideDiv);
+
+                // Agenda remoção do slide anterior e próximo slide
+                setTimeout(() => {
+                    slideDiv.style.opacity = '0';
+                    setTimeout(() => slideDiv.remove(), 1000);
+                    slideIndex++;
+                    showSlide();
+                }, 5000); // 5 Segundos por slide
+            }
+
+            showSlide();
+        }
+
+        // --- 1. LÓGICA DE TRANSIÇÃO (DO BOLO PARA O SITE) ---
+        function finalizarIntroBolo() {
+            const cakeContainer = document.getElementById('cake-intro-container');
+            const introSequence = document.getElementById('intro-sequence');
+            
+            // 1. Fade out no bolo
+            cakeContainer.style.opacity = '0';
+            
+            setTimeout(() => {
+                cakeContainer.style.display = 'none';
+                
+                // Limpa recursos do ThreeJS para não pesar (função definida no module script)
+                if (window.cleanUpThreeJS) window.cleanUpThreeJS();
+                
+                // 2. Inicia sequencia do coração
+                introSequence.style.display = 'flex';
+                initCanvasParticles();
+                
+            }, 1500);
+        }
+
+        const heartAnimContainer = document.getElementById('intro-sequence');
+        const mainContainer = document.getElementById('mainContainer');
+
+        function initCanvasParticles() {
+            const canvasHeart = document.getElementById('heart-canvas');
+            const ctx = canvasHeart.getContext('2d');
+            canvasHeart.width = window.innerWidth;
+            canvasHeart.height = window.innerHeight;
+
+            let particles = [];
+            const particleCount = 400;
+
+            function getHeartPoint(factor) {
+                const t = factor * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                const scale = Math.min(canvasHeart.width, canvasHeart.height) / 45; 
+                return {
+                    x: (x * scale) + canvasHeart.width / 2,
+                    y: -(y * scale) + canvasHeart.height / 2 + canvasHeart.height * 0.1
+                };
+            }
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvasHeart.width;
+                    this.y = Math.random() * canvasHeart.height;
+                    this.target = getHeartPoint(Math.random());
+                    this.speed = Math.random() * 0.03 + 0.01;
+                    const hue = Math.random() > 0.5 ? 320 : 280;
+                    this.color = `hsl(${hue}, 100%, 60%)`;
+                    this.size = Math.random() * 2 + 1.5;
+                }
+                update() {
+                    this.x += (this.target.x - this.x) * this.speed;
+                    this.y += (this.target.y - this.y) * this.speed;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                }
+            }
+
+            for(let i=0; i<particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                if (heartAnimContainer.style.display === 'none') return;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, canvasHeart.width, canvasHeart.height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                requestAnimationFrame(animate);
+            }
+            animate();
+
+            // Sequência de aparecimento dos textos finais
+            setTimeout(() => {
+                document.getElementById('finalMsg').style.opacity = '1';
+                setTimeout(() => {
+                    document.getElementById('sunWrapper').style.opacity = '1';
+                }, 1000);
+
+                // FINAL: Vai para o site principal após a animação
+                setTimeout(() => {
+                    heartAnimContainer.style.opacity = '0';
+                    heartAnimContainer.style.pointerEvents = 'none';
+                    mainContainer.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        mainContainer.style.opacity = '1';
+                        getWeather();
+                        setTimeout(() => {
+                             heartAnimContainer.style.display = 'none';
+                        }, 2000);
+                    }, 100);
+                }, 6000); 
+            }, 4000); 
+        }
+
+        // --- 2. CLIMA ---
+        async function getWeather() {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=-21.1775&longitude=-47.8103&current=temperature_2m,is_day,weather_code&hourly=precipitation_probability,rain&daily=precipitation_probability_max&timezone=America%2FSao_Paulo`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const temp = Math.round(data.current.temperature_2m);
+                const code = data.current.weather_code;
+                const isDay = data.current.is_day; 
+                const horaAtual = new Date().getHours();
+                const chanceChuvaAgora = data.hourly.precipitation_probability[horaAtual];
+                const chanceChuvaDia = data.daily.precipitation_probability_max[0];
+
+                document.getElementById('temp-display').innerText = `${temp}°C`;
+                
+                let msg = "";
+
+                if (chanceChuvaAgora > 60) {
+                    msg = "Chance alta de chuva agora! Leve o guarda-chuva ☔";
+                } 
+                else if (code >= 95) {
+                    msg = "Tempestade por aí! Fique segura ❤️⛈️";
+                }
+                else if (code >= 61 && code <= 67) {
+                    msg = "Está chovendo! Se proteja ☔";
+                }
+                else if (code <= 1) {
+                    if (isDay) {
+                        msg = temp > 28 ? "Solzão em Ribeirão! Beba água e use protetor ☀️" : "Dia lindo para sorrir! ☀️";
+                    } else {
+                        msg = "Céu estrelado como você ✨";
+                    }
+                }
+                else if (code <= 3) {
+                    msg = "Nublado, mas você ilumina meu dia ☁️";
+                }
+                else if (chanceChuvaDia > 50) {
+                    msg = "O céu está instável, pode chover mais tarde 🌦️";
+                } 
+                else {
+                    msg = "Clima perfeito para te amar ❤️";
+                }
+                
+                document.getElementById('weather-msg').innerText = msg;
+
+            } catch (error) {
+                console.error("Erro clima:", error);
+                document.getElementById('weather-msg').innerText = "Ribeirão Preto está quente como meu amor ❤️";
+            }
+        }
+
+        // --- 3. MQTT, JOGOS, MÚSICA ---
+        const HOST = "0c74a64b55ed4b21b7f352c3abb8b974.s1.eu.hivemq.cloud";
+        const PORT = 8884;
+        const USERNAME = "felps";
+        const PASSWORD = "@Fepa2002";
+        const TOPICO = "projeto/humor";
+        const CLIENT_ID = "bea_premium_" + Math.random().toString(16).substr(2, 8);
+
+        let client = new Paho.MQTT.Client(HOST, PORT, CLIENT_ID);
+
+        const options = {
+            timeout: 3,
+            onSuccess: conectado,
+            onFailure: falhaConexao,
+            useSSL: true,
+            userName: USERNAME,
+            password: PASSWORD,
+            keepAliveInterval: 30
+        };
+
+        client.onMessageArrived = receberMensagem;
+        client.connect(options);
+
+        function conectado() {
+            document.getElementById("statusText").innerText = "Online ✓";
+            document.getElementById("statusDot").style.background = "#2ecc71";
+            client.subscribe(TOPICO); 
+        }
+
+        function falhaConexao() {
+            document.getElementById("statusText").innerText = "Reconectando...";
+            document.getElementById("statusDot").style.background = "#e74c3c";
+            setTimeout(() => client.connect(options), 2000);
+        }
+
+        function enviarMQTT(mensagem) {
+            if (!client.isConnected()) return;
+            const message = new Paho.MQTT.Message(mensagem);
+            message.destinationName = TOPICO;
+            client.send(message);
+        }
+
+        function enviarHumor(comando, emoji) {
+            enviarMQTT(comando); // Agora envia 'verde', 'vermelho' etc corretamente
+            criarEfeitoParticulas(emoji);
+            if (comando === 'vermelho') {
+                setTimeout(() => mostrarApoio(), 500);
+            } else if (comando === 'desligar') {
+                mostrarModal('<i class="fas fa-moon" style="font-size:4rem;color:#ffd700;"></i><h2>Boa Noite! 🌙</h2><p>Que seus sonhos sejam doces como você ✨</p>');
+            }
+        }
+
+        function enviarMensagem() {
+            const texto = document.getElementById('mensagemCustom').value.trim();
+            if (!texto) {
+                mostrarModal('<i class="fas fa-exclamation-triangle" style="font-size:3rem;color:#feca57;"></i><h2>Opa!</h2><p>Escreva uma mensagem primeiro 😊</p>');
+                return;
+            }
+            enviarMQTT("msg:" + texto); // Prefixo 'msg:' para o bot identificar
+            document.getElementById('mensagemCustom').value = "";
+            criarEfeitoParticulas('💌');
+            mostrarModal('<i class="fas fa-check-circle" style="font-size:4rem;color:#2ecc71;"></i><h2>Mensagem Enviada! ✓</h2><p>Sua mensagem foi enviada com muito carinho 💕</p>');
+        }
+
+        // --- FUNÇÕES DA LOJINHA ---
+        let carrinho = []; 
+
+        const storeOptions = {
+            'item1': { nome: 'Massagem Relaxante 💆‍♀️', icon: 'fa-spa' },
+            'item2': { nome: 'Brigadeiro + Filme 🍫', icon: 'fa-cookie-bite' },
+            'item3': { nome: 'Beijos Intensos 💋', icon: 'fa-kiss-wink-heart' },
+            'item4': { nome: 'Conversa Boa 💬', icon: 'fa-comments' },
+            'item5': { nome: 'Assistir Fantasmas 👻', icon: 'fa-ghost' },
+            'item6': { nome: 'Dormir Juntinhos 😴', icon: 'fa-bed' }
+        };
+
+        function abrirLojinha() {
+            carrinho = []; 
+            
+            let gridHtml = '';
+            for (const [key, item] of Object.entries(storeOptions)) {
+                gridHtml += `
+                    <div class="store-item" id="${key}" onclick="toggleSelecionar('${key}')">
+                        <i class="fas ${item.icon}"></i>
+                        <span>${item.nome.split(' ')[0]}...</span>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <h2 style="font-family:'Dancing Script', cursive; font-size:2.5rem; color:#feca57; margin-bottom:10px;">Lojinha do Amor 🛍️</h2>
+                <p style="margin-bottom:20px;">Clique nos itens para selecionar e depois envie tudo!</p>
+                
+                <div class="store-grid" id="storeGrid">
+                    ${gridHtml}
+                </div>
+
+                <div class="custom-wish">
+                    <p style="font-weight:bold; margin-bottom:5px;">Desejo Especial (opcional):</p>
+                    <input type="text" id="desejoInput" class="message-input" style="min-height:50px; padding:10px; margin-bottom:10px;" placeholder="Ex: Cafuné, Passeio...">
+                </div>
+
+                <button class="send-btn" onclick="enviarCarrinho()" style="margin-top: 15px;">
+                    <i class="fas fa-paper-plane"></i> Enviar Pedido Completo ✨
+                </button>
+            `;
+            mostrarModal(html);
+        }
+
+        function toggleSelecionar(key) {
+            const el = document.getElementById(key);
+            
+            if(carrinho.includes(key)) {
+                carrinho = carrinho.filter(k => k !== key);
+                el.classList.remove('selected');
+            } else {
+                carrinho.push(key);
+                el.classList.add('selected');
+            }
+        }
+
+        function enviarCarrinho() {
+            const inputEl = document.getElementById('desejoInput');
+            const desejoExtra = inputEl ? inputEl.value : "";
+            
+            if(carrinho.length === 0 && !desejoExtra.trim()) {
+                alert("Escolha pelo menos um item ou escreva um desejo! 😊");
+                return;
+            }
+
+            let mensagemFinal = "🛍️ PEDIDO LOJA:\n";
+            let listaHTML = '<ul style="text-align:left; margin: 15px 0; list-style:none;">';
+            
+            if(carrinho.length > 0) {
+                mensagemFinal += "Itens:\n";
+                carrinho.forEach(key => {
+                    const item = storeOptions[key];
+                    mensagemFinal += "• " + item.nome + "\n";
+                    listaHTML += `<li style="font-size:1.1rem; margin-bottom:5px;"><i class="fas ${item.icon}" style="color:#feca57; width:25px;"></i> ${item.nome}</li>`;
+                });
+            }
+            listaHTML += '</ul>';
+
+            if(desejoExtra.trim()) {
+                mensagemFinal += "\n✨ Extra: " + desejoExtra;
+                listaHTML += `<p><strong>Extra:</strong> ${desejoExtra}</p>`;
+            }
+
+            // Envia para o backend via MQTT (que encaminha pro Telegram usando o prefixo msg:)
+            enviarMQTT("msg:" + mensagemFinal);
+            fecharModal();
+
+            setTimeout(() => {
+                mostrarModal(`
+                    <i class="fas fa-check-double" style="font-size:4rem;color:#2ecc71;"></i>
+                    <h2 style="margin-top:10px;">Pedido Confirmado! 🎉</h2>
+                    <p>Você escolheu:</p>
+                    <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.3); margin-top:10px;">
+                        ${listaHTML}
+                    </div>
+                    <p style="margin-top:10px; font-size:0.9rem;">Prepare-se para o sábado!</p>
+                `);
+                criarEfeitoParticulas('🎁');
+            }, 500);
+        }
+
+        // --- JOGO DA VELHA ---
+        let meuSimbolo = 'X';
+        let turnoAtual = 'X';
+        let cells = ['', '', '', '', '', '', '', '', ''];
+        
+        function escolherLado(simbolo) {
+            meuSimbolo = simbolo;
+            document.getElementById('btnX').classList.remove('selected');
+            document.getElementById('btnO').classList.remove('selected');
+            if(simbolo === 'X') {
+                document.getElementById('btnX').classList.add('selected');
+            } else {
+                document.getElementById('btnO').classList.add('selected');
+            }
+        }
+
+        function jogar(index) {
+            if(cells[index] === '') {
+                if (meuSimbolo === turnoAtual) {
+                    enviarMQTT(`game:${index}:${meuSimbolo}`);
+                } else {
+                    mostrarModal('<i class="fas fa-hand-paper" style="font-size:3rem;color:#feca57;"></i><h2>Espere!</h2><p>Ainda não é sua vez 😊</p>');
+                }
+            }
+        }
+
+        function resetGame() {
+            enviarMQTT('game:reset');
+        }
+
+        function receberMensagem(message) {
+            const msg = message.payloadString;
+            if (msg.startsWith('game:')) {
+                if (msg === 'game:reset') {
+                    cells = ['', '', '', '', '', '', '', '', ''];
+                    turnoAtual = 'X';
+                    atualizarTabuleiro();
+                    return;
+                }
+                const parts = msg.split(':');
+                const index = parseInt(parts[1]);
+                const symbol = parts[2];
+                cells[index] = symbol;
+                turnoAtual = (symbol === 'X') ? 'O' : 'X';
+                atualizarTabuleiro();
+                verificarVitoria();
+            }
+        }
+
+        function atualizarTabuleiro() {
+            const board = document.getElementById('gameBoard');
+            const divs = board.getElementsByClassName('game-cell');
+            const turnDisplay = document.getElementById('turnDisplay');
+            turnDisplay.innerText = turnoAtual;
+            turnDisplay.style.color = turnoAtual === 'X' ? '#feca57' : '#26de81';
+            for(let i=0; i<9; i++) {
+                divs[i].innerText = cells[i];
+                divs[i].className = 'game-cell ' + (cells[i] === 'X' ? 'x' : cells[i] === 'O' ? 'o' : '');
+            }
+        }
+
+        function verificarVitoria() {
+            const combos = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+            for (let combo of combos) {
+                const [a, b, c] = combo;
+                if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) {
+                    setTimeout(() => mostrarModal(`<i class="fas fa-trophy" style="font-size:4rem;color:#ffd700;"></i><h2>O jogador ${cells[a]} venceu! 🎉</h2><p>Parabéns!</p>`), 300);
+                    return;
+                }
+            }
+            if (!cells.includes('')) {
+                 setTimeout(() => mostrarModal(`<i class="fas fa-handshake" style="font-size:4rem;color:#fff;"></i><h2>Empate!</h2><p>Deu velha!</p>`), 300);
+            }
+        }
+
+        function abrirMemoria(src, data, texto) {
+            mostrarModal(`
+                <div style="text-align:center;">
+                    <img src="${src}" style="max-width:100%; max-height:50vh; border-radius:15px; border:3px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                    <h2 style="font-family:'Pacifico', cursive; color:#feca57; margin:15px 0;">📅 ${data}</h2>
+                    <p style="font-size:1.3rem; font-style:italic;">"${texto}"</p>
+                </div>
+            `);
+        }
+
+        function criarEfeitoParticulas(emoji) {
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.innerText = emoji;
+                particle.style.position = 'fixed';
+                particle.style.left = Math.random() * window.innerWidth + 'px';
+                particle.style.top = Math.random() * window.innerHeight + 'px';
+                particle.style.fontSize = (Math.random() * 30 + 20) + 'px';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '9999';
+                particle.style.transition = 'all 2s ease-out';
+                particle.style.opacity = '1';
+                document.body.appendChild(particle);
+                setTimeout(() => {
+                    particle.style.transform = `translateY(-100px) rotate(${Math.random() * 360}deg)`;
+                    particle.style.opacity = '0';
+                }, 50);
+                setTimeout(() => particle.remove(), 2000);
+            }
+        }
+
+        function mostrarApoio() {
+            const mensagens = [
+                '<i class="fas fa-heart" style="font-size:4rem;color:#ff6b9d;"></i><h2>Estou Aqui! 🌻</h2><p>Pode contar comigo sempre que precisar.<br>Te amo muito! 💕</p>',
+                '<i class="fas fa-hands-holding-heart" style="font-size:4rem;color:#ff69b4;"></i><h2>Vai Passar! ✨</h2><p>Dias difíceis são temporários,<br>mas meu amor por você é eterno! 💖</p>',
+                '<i class="fas fa-heart-pulse" style="font-size:4rem;color:#e73c7e;"></i><h2>Você é Forte! 💪</h2><p>E nunca está sozinha.<br>Estou sempre ao seu lado! 🫂</p>'
+            ];
+            const msg = mensagens[Math.floor(Math.random() * mensagens.length)];
+            mostrarModal(msg);
+        }
+
+        const frases = [
+            "Arrase naquela prova hoje, voce é muito capaz!",
+        ];
+
+        function gerarFrase() {
+            const frase = frases[Math.floor(Math.random() * frases.length)];
+            const el = document.getElementById('quoteText');
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.innerText = frase;
+                el.style.opacity = '1';
+            }, 300);
+        }
+
+        function abrirCarta() {
+            mostrarModal(`
+                <i class="fas fa-envelope-open-heart" style="font-size:4rem;color:#ff69b4;"></i>
+                <h2 style="font-family:'Dancing Script',cursive;font-size:2.5rem;margin:25px 0;">Para Minha Bea 💖</h2>
+                <p style="text-align:left;font-size:1.15rem;line-height:2;">
+                    Meu solzinho,
+                    <br><br>
+                    Bom meu amor, hoje é o ultimo dia desta semana para você ir lá e dar o seu melhor no que se dedicou o ano todo, confio totalmente em sua capacidade, você ja é uma mulher vencedora para um caralho e ainda sim tenta se superar a cada dia, isto é uma coisa linda de ver em você, no final, jamais se culpe independente do que aconteça, apenas agradeça e continue em frente pois o seu futuro é um dos mais brilhantes do mundo.
+                    <br><br>
+                    Além de super ultra mega inteligente e dedicada, você é carinhosa, é delicada, meiga, amorosa, linda pra caramba, tudo em você são adjetivos mais do que bons, falta palavras ainda para te definir, pois você é um nivel acima da propria perfeição, agradeço todo santo dia pela oportunidade de ter conhecido você, jamais será em vão tudo isso que estou a sentir por ti, quero lhe amar intensamente dia após dia, você é minha mulher guerreira e vitoriosa, iremos passar os melhores momentos das nossas vidas, juntos, obrigado por tudo novamente, arrase na prova hoje! Eu te amo.
+                    <strong style="font-family:'Dancing Script',cursive;font-size:1.5rem;">
+                    <br><br>Com todo meu amor,<br>Seu Oceaninho 🌊
+                    </strong>
+                </p>
+            `);
+        }
+
+        function mostrarModal(conteudo) {
+            document.getElementById('modalBody').innerHTML = conteudo;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') fecharModal();
+        });
+
+        function calcularDias() {
+            const dataInicio = new Date('2025-11-30');
+            const hoje = new Date();
+            const diferenca = Math.floor((hoje - dataInicio) / (1000 * 60 * 60 * 24));
+            document.getElementById('daysCounter').innerText = diferenca;
+        }
+        calcularDias();
+
+        // --- LÓGICA DO PLAYER DE MÚSICA ---
+        const audio = document.getElementById('audioPlayer');
+        const playIcon = document.getElementById('playIcon');
+        const albumCover = document.getElementById('albumCover');
+        const progressBar = document.getElementById('progressBar');
+        const progressArea = document.getElementById('progressArea');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
+        const volumeSlider = document.getElementById('volumeSlider');
+
+        audio.volume = 0.5;
+
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play();
+                playIcon.classList.remove('fa-play');
+                playIcon.classList.add('fa-pause');
+                albumCover.style.animationPlayState = 'running';
+            } else {
+                audio.pause();
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+                albumCover.style.animationPlayState = 'paused';
+            }
+        }
+
+        function setVolume(valor) {
+            audio.volume = valor / 100;
+        }
+
+        function mudarVolume(delta) {
+            let novoValor = parseInt(volumeSlider.value) + delta;
+            if (novoValor > 100) novoValor = 100;
+            if (novoValor < 0) novoValor = 0;
+            volumeSlider.value = novoValor;
+            setVolume(novoValor);
+        }
+
+        audio.addEventListener('timeupdate', (e) => {
+            const currentTime = e.target.currentTime;
+            const duration = e.target.duration;
+            if(duration) {
+                let progressWidth = (currentTime / duration) * 100;
+                progressBar.style.width = `${progressWidth}%`;
+                let currentMin = Math.floor(currentTime / 60);
+                let currentSec = Math.floor(currentTime % 60);
+                if(currentSec < 10) currentSec = `0${currentSec}`;
+                currentTimeEl.innerText = `${currentMin}:${currentSec}`;
+            }
+        });
+
+        audio.addEventListener('loadeddata', () => {
+            let audioDuration = audio.duration;
+            let totalMin = Math.floor(audioDuration / 60);
+            let totalSec = Math.floor(audioDuration % 60);
+            if(totalSec < 10) totalSec = `0${totalSec}`;
+            durationEl.innerText = `${totalMin}:${totalSec}`;
+        });
+
+        progressArea.addEventListener('click', (e) => {
+            let progressWidth = progressArea.clientWidth;
+            let clickedOffsetX = e.offsetX;
+            let songDuration = audio.duration;
+            audio.currentTime = (clickedOffsetX / progressWidth) * songDuration;
+            if(audio.paused) togglePlay();
+        });
+
+        audio.addEventListener('ended', () => {
+            playIcon.classList.remove('fa-pause');
+            playIcon.classList.add('fa-play');
+            albumCover.style.animationPlayState = 'paused';
+            progressBar.style.width = '0%';
+        });
+
+        function criarEstrelas() {
+            const stars = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                stars.appendChild(star);
+            }
+        }
+
+        function criarCoracoes() {
+            const hearts = document.getElementById('floatingHearts');
+            setInterval(() => {
+                const heart = document.createElement('div');
+                heart.className = 'heart-float';
+                heart.innerText = ['❤️', '💕', '💖', '💗', '💝'][Math.floor(Math.random() * 5)];
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                hearts.appendChild(heart);
+                setTimeout(() => heart.remove(), 10000);
+            }, 3000);
+        }
+
+        criarEstrelas();
+        criarCoracoes();
+        gerarFrase();
+    </script>
+</body>
+
+</html>
